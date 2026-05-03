@@ -15,7 +15,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // Servir le frontend statique
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Servir les uploads statiquement
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -33,7 +33,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 
 // ── SPA Fallback ─────────────────────────────────────────
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
 // ── Gestion globale des erreurs ──────────────────────────
