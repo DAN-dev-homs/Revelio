@@ -1,18 +1,18 @@
 // ============================================================
 // REVELIO — Database Setup (database.js)
-// Utilise node:sqlite (intégré Node.js v22+, sans compilation)
+// Utilise better-sqlite3 pour compatibilité avec Node.js < 22
 // ============================================================
-const { DatabaseSync } = require('node:sqlite');
+const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const path   = require('path');
 
 const DB_PATH = path.join(__dirname, 'revelio.db');
 
 function initDB() {
-  const db = new DatabaseSync(DB_PATH);
+  const db = new Database(DB_PATH);
 
-  db.exec("PRAGMA journal_mode = WAL");
-  db.exec("PRAGMA foreign_keys = ON");
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
 
   // ── Schéma ─────────────────────────────────────────────
   db.exec(`

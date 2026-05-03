@@ -1,6 +1,9 @@
 # Utilise une image Node.js officielle
 FROM node:18-alpine
 
+# Installer les outils de build pour better-sqlite3
+RUN apk add --no-cache python3 make g++
+
 # Définit le répertoire de travail
 WORKDIR /app
 
