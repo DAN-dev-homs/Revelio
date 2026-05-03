@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="description" content="Revelio — Votre application de croissance spirituelle et de lecture chrétienne">
+  <meta name="theme-color" content="#111111">
+  <title>Revelio — Spiritual Growth App</title>
+  <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/assets/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/animations.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+</head>
+<body>
+  <!-- App Shell -->
+  <div id="app">
+    <!-- Splash screen affiché pendant le chargement -->
+    <div id="splash" style="
+      position:fixed; inset:0;
+      background:var(--bg-primary);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      z-index:9999; gap:16px;
+    ">
+      <img src="/assets/images/revelio-logo.png" alt="Revelio" style="width:96px;height:96px;object-fit:contain;">
+      <h1 style="font-size:32px; font-weight:700; letter-spacing:-0.5px;">Revelio</h1>
+      <p style="color:var(--text-secondary); font-size:14px;">Chargement...</p>
+      <div class="spinner" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Global Audio Elements (Arrière-plan) -->
+  <audio id="global-audio"></audio>
+  <div id="mini-player" class="mini-player" style="display:none;">
+    <div class="mp-cover"></div>
+    <div class="mp-info">
+      <div class="mp-title"></div>
+      <div class="mp-progress-track">
+        <div class="mp-progress-fill"></div>
+      </div>
+    </div>
+    <div class="mp-controls">
+      <button class="mp-play-btn tap-feedback">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="mp-close-btn tap-feedback">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts (ordre important : dépendances d'abord) -->
+  <script src="/assets/js/i18n.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/home.js"></script>
+  <script src="/assets/js/explore.js"></script>
+  <script src="/assets/js/community.js"></script>
+  <script src="/assets/js/profile.js"></script>
+  <script src="/assets/js/audio_manager.js"></script>
+  <script src="/assets/js/notifications.js"></script>
+  <script src="/assets/js/book_detail.js"></script>
+  <script src="/assets/js/app.js"></script>
+
+  <script>
+    // Masquer le splash après init
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const splash = document.getElementById('splash');
+        if (splash) {
+          splash.style.transition = 'opacity 0.4s ease';
+          splash.style.opacity = '0';
+          setTimeout(() => splash.remove(), 400);
+        }
+      }, 600);
+    });
+  </script>
+</body>
+</html>

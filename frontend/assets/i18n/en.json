@@ -1,0 +1,91 @@
+{
+  "en": {
+    "nav": {
+      "home": "Home",
+      "explore": "Explore",
+      "community": "Community",
+      "discover": "Discover",
+      "profile": "Profile"
+    },
+    "home": {
+      "welcome": "Welcome back",
+      "subtitle": "Continue your journey of growth and transformation",
+      "search_placeholder": "Search for books...",
+      "streak_title": "Day Streak",
+      "streak_sub": "Keep up the amazing work!",
+      "categories_title": "Explore by Category",
+      "continue_reading": "Continue Reading",
+      "healing": "Healing",
+      "faith": "Faith",
+      "identity": "Identity",
+      "discipline": "Discipline"
+    },
+    "explore": {
+      "title": "Explore Library",
+      "search_books": "Search for books...",
+      "search_author": "Search by author",
+      "filter_all": "All",
+      "filter_healing": "Healing",
+      "filter_faith": "Faith",
+      "filter_identity": "Identity",
+      "filter_discipline": "Discipline",
+      "time_all": "All",
+      "time_20": "< 20 min",
+      "time_20_30": "20-30 min",
+      "time_30": "> 30 min",
+      "level_all": "All",
+      "level_beginner": "Beginner",
+      "level_intermediate": "Intermediate",
+      "level_advanced": "Advanced",
+      "books_count": "books",
+      "save": "Save",
+      "saved": "Saved"
+    },
+    "community": {
+      "tab_today": "Today",
+      "tab_community": "Community",
+      "share_placeholder": "Share a testimony or a thought...",
+      "testimony": "Testimony",
+      "thought": "Thought",
+      "publish": "Publish",
+      "modal_title": "Share with the community",
+      "likes": "likes",
+      "comments": "comments"
+    },
+    "discover": {
+      "title": "Discover",
+      "search_placeholder": "Search",
+      "plans": "Plans",
+      "videos": "Videos",
+      "churches": "Churches",
+      "partners": "Partners",
+      "topics_title": "Topics",
+      "love": "Love",
+      "anxiety": "Anxiety",
+      "prayer": "Prayer",
+      "forgiveness": "Forgiveness",
+      "purpose": "Purpose",
+      "peace": "Peace"
+    },
+    "profile": {
+      "title": "Profile",
+      "books_completed": "Books Completed",
+      "hours_spent": "Hours Spent",
+      "current_streak": "Current Streak",
+      "streak_unit": "days",
+      "saved_books": "Saved Books",
+      "settings": "Settings",
+      "logout": "Log out"
+    },
+    "common": {
+      "ago_hours": "h ago",
+      "ago_days": "d ago",
+      "ago_minutes": "min ago",
+      "loading": "Loading...",
+      "error": "An error occurred",
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "close": "Close"
+    }
+  }
+}

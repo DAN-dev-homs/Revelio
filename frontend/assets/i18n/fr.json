@@ -1,0 +1,91 @@
+{
+  "fr": {
+    "nav": {
+      "home": "Accueil",
+      "explore": "Explorer",
+      "community": "Communauté",
+      "discover": "Découvrir",
+      "profile": "Profil"
+    },
+    "home": {
+      "welcome": "Bon retour",
+      "subtitle": "Continuez votre parcours de croissance et transformation",
+      "search_placeholder": "Rechercher des livres...",
+      "streak_title": "Jours consécutifs",
+      "streak_sub": "Continuez ce bel effort !",
+      "categories_title": "Explorer par catégorie",
+      "continue_reading": "Continuer la lecture",
+      "healing": "Guérison",
+      "faith": "Foi",
+      "identity": "Identité",
+      "discipline": "Discipline"
+    },
+    "explore": {
+      "title": "Bibliothèque",
+      "search_books": "Rechercher un livre...",
+      "search_author": "Rechercher par auteur",
+      "filter_all": "Tous",
+      "filter_healing": "Guérison",
+      "filter_faith": "Foi",
+      "filter_identity": "Identité",
+      "filter_discipline": "Discipline",
+      "time_all": "Tous",
+      "time_20": "< 20 min",
+      "time_20_30": "20-30 min",
+      "time_30": "> 30 min",
+      "level_all": "Tous",
+      "level_beginner": "Débutant",
+      "level_intermediate": "Intermédiaire",
+      "level_advanced": "Avancé",
+      "books_count": "livres",
+      "save": "Sauvegarder",
+      "saved": "Sauvegardé"
+    },
+    "community": {
+      "tab_today": "Aujourd'hui",
+      "tab_community": "Communauté",
+      "share_placeholder": "Partagez un témoignage ou une pensée...",
+      "testimony": "Témoignage",
+      "thought": "Réflexion",
+      "publish": "Publier",
+      "modal_title": "Partager avec la communauté",
+      "likes": "j'aime",
+      "comments": "commentaires"
+    },
+    "discover": {
+      "title": "Découvrir",
+      "search_placeholder": "Rechercher",
+      "plans": "Plans",
+      "videos": "Vidéos",
+      "churches": "Églises",
+      "partners": "Partenaires",
+      "topics_title": "Sujets",
+      "love": "Amour",
+      "anxiety": "Anxiété",
+      "prayer": "Prière",
+      "forgiveness": "Pardon",
+      "purpose": "Vocation",
+      "peace": "Paix"
+    },
+    "profile": {
+      "title": "Profil",
+      "books_completed": "Livres Terminés",
+      "hours_spent": "Heures Passées",
+      "current_streak": "Série Actuelle",
+      "streak_unit": "jours",
+      "saved_books": "Livres Sauvegardés",
+      "settings": "Paramètres",
+      "logout": "Se déconnecter"
+    },
+    "common": {
+      "ago_hours": "h",
+      "ago_days": "j",
+      "ago_minutes": "min",
+      "loading": "Chargement...",
+      "error": "Une erreur est survenue",
+      "retry": "Réessayer",
+      "cancel": "Annuler",
+      "close": "Fermer"
+    }
+  }
+}

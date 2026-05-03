@@ -1,0 +1,106 @@
+/* ============================================================
+   REVELIO — Base Styles (base.css)
+   Reset global, typographie, layout de l'app
+   ============================================================ */
+
+/* ── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, svg { display: block; max-width: 100%; }
+button  { cursor: pointer; border: none; background: none; font-family: inherit; }
+input   { font-family: inherit; }
+ul, ol  { list-style: none; }
+a       { text-decoration: none; color: inherit; }
+
+/* ── App Shell ─────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  position: relative;
+  background: var(--bg-primary);
+}
+
+/* ── Pages (contenu scrollable) ─────────────────────────── */
+.page {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--spacing-2xl) var(--page-padding);
+  padding-bottom: calc(var(--nav-height) + var(--spacing-xl));
+  /* scroll smoothing */
+  scroll-behavior: smooth;
+}
+
+/* Masquer les pages non-actives */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Typographie ────────────────────────────────────────── */
+h1 { font-size: var(--font-2xl); font-weight: var(--font-weight-bold); line-height: 1.2; }
+h2 { font-size: var(--font-xl);  font-weight: var(--font-weight-semibold); }
+h3 { font-size: var(--font-lg);  font-weight: var(--font-weight-semibold); }
+h4 { font-size: var(--font-md);  font-weight: var(--font-weight-medium); }
+p  { font-size: var(--font-md);  line-height: 1.6; }
+
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-accent    { color: var(--accent-red); }
+.text-sm        { font-size: var(--font-sm); }
+.text-xs        { font-size: var(--font-xs); }
+
+/* ── Utilitaires layout ─────────────────────────────────── */
+.flex         { display: flex; }
+.flex-col     { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-sm   { gap: var(--spacing-sm); }
+.gap-md   { gap: var(--spacing-md); }
+.gap-lg   { gap: var(--spacing-lg); }
+.w-full   { width: 100%; }
+.relative { position: relative; }
+
+/* ── Scrollbar personnalisée ────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-surface-3); border-radius: 4px; }
+
+/* ── Overlay modal ──────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+  backdrop-filter: blur(4px);
+}
+.overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}

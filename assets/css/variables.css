@@ -1,0 +1,79 @@
+/* ============================================================
+   REVELIO — Design Tokens (variables.css)
+   Toutes les variables CSS du design system
+   ============================================================ */
+
+:root {
+  /* ── Couleurs de fond ─────────────────────────────────── */
+  --bg-primary:    #111111;   /* Fond principal (noir profond) */
+  --bg-surface:    #1C1C1C;   /* Surface des cards */
+  --bg-surface-2:  #242424;   /* Surface secondaire (inputs, etc.) */
+  --bg-surface-3:  #2E2E2E;   /* Surface tertiaire (hover) */
+
+  /* ── Couleurs d'accent ────────────────────────────────── */
+  --accent-red:    #E53935;   /* Rouge principal (streak, CTA) */
+  --accent-red-2:  #EF5350;   /* Rouge hover */
+  --accent-red-bg: #3D1C1C;   /* Fond rouge léger */
+  --accent-mint:   #4CAF93;   /* Mint/Teal (couvertures livres) */
+  --accent-blue:   #2563EB;   /* Bleu (topic Anxiety) */
+  --accent-purple: #7C3AED;   /* Violet (topic genre) */
+  --accent-dark-red:#8B0000;  /* Rouge foncé (topic) */
+
+  /* ── Couleurs de texte ────────────────────────────────── */
+  --text-primary:   #FFFFFF;  /* Texte principal */
+  --text-secondary: #9CA3AF;  /* Texte secondaire (gris) */
+  --text-muted:     #6B7280;  /* Texte très atténué */
+  --text-accent:    #E53935;  /* Texte accent rouge */
+
+  /* ── Bordures & séparateurs ───────────────────────────── */
+  --border-color:   #2E2E2E;
+  --border-radius-sm:  8px;
+  --border-radius-md:  12px;
+  --border-radius-lg:  16px;
+  --border-radius-xl:  24px;
+  --border-radius-full: 9999px;
+
+  /* ── Espacement ───────────────────────────────────────── */
+  --spacing-xs:   4px;
+  --spacing-sm:   8px;
+  --spacing-md:   12px;
+  --spacing-lg:   16px;
+  --spacing-xl:   20px;
+  --spacing-2xl:  24px;
+  --spacing-3xl:  32px;
+
+  /* ── Typographie ──────────────────────────────────────── */
+  --font-family:   'Inter', system-ui, -apple-system, sans-serif;
+  --font-xs:   11px;
+  --font-sm:   13px;
+  --font-md:   15px;
+  --font-lg:   17px;
+  --font-xl:   20px;
+  --font-2xl:  24px;
+  --font-3xl:  28px;
+
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* ── Ombres ───────────────────────────────────────────── */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.6);
+  --shadow-red: 0 4px 20px rgba(229,57,53,0.35);
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+  --transition-page:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Bottom nav ───────────────────────────────────────── */
+  --nav-height: 64px;
+  --nav-bg:     #161616;
+
+  /* ── Layout ───────────────────────────────────────────── */
+  --max-width:  480px;      /* Largeur max (mobile-first) */
+  --page-padding: 16px;     /* Padding horizontal des pages */
+}
