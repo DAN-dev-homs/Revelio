@@ -310,6 +310,7 @@ async function ensureSchema(db) {
 
 async function seedData(db) {
   const hash = bcrypt.hashSync('password123', 10);
+  const newAdminHash = bcrypt.hashSync('Lungu@221000', 10);
 
   const resultAdmin = await db.prepare(
     'INSERT INTO users (name, email, password, role, streak_days, total_hours, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -318,7 +319,7 @@ async function seedData(db) {
 
   const resultNewAdmin = await db.prepare(
     'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
-  ).run('danielhomelema22', 'danielhomelema@gmail.com', hash, 'admin');
+  ).run('danielhomelema22', 'danielhomelema22@gmail.com', newAdminHash, 'admin');
   const newAdminId = resultNewAdmin.lastInsertRowid;
 
   const resultUser = await db.prepare(
