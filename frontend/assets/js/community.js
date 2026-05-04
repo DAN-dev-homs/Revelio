@@ -62,17 +62,41 @@ const CommunityPage = (() => {
     // Bind like buttons
     feed.querySelectorAll('.post-action-btn[data-post-id]').forEach(btn => {
       btn.addEventListener('click', async () => {
+        if (btn.disabled) return; // Prevent multiple clicks
+        
         const id  = parseInt(btn.dataset.postId);
-        const res = await api.toggleLike(id);
         const post = posts.find(p => p.id === id);
-        if (post) {
+        if (!post) return;
+        
+        btn.disabled = true;
+        const originalLiked = post.is_liked;
+        const originalCount = post.likes_count;
+        
+        // Optimistic update
+        post.is_liked = !originalLiked;
+        post.likes_count = originalLiked ? Math.max(0, originalCount - 1) : originalCount + 1;
+        btn.classList.toggle('liked-active', post.is_liked);
+        btn.querySelector('span').textContent = post.likes_count;
+        btn.querySelector('svg').style.animation = 'heartPulse 0.5s ease';
+        
+        try {
+          const res = await api.toggleLike(id);
+          // Server response takes precedence
           post.is_liked = res.liked;
           post.likes_count = res.likes_count;
+          btn.classList.toggle('liked-active', res.liked);
+          btn.querySelector('span').textContent = res.likes_count;
+        } catch (err) {
+          // Revert on error
+          post.is_liked = originalLiked;
+          post.likes_count = originalCount;
+          btn.classList.toggle('liked-active', originalLiked);
+          btn.querySelector('span').textContent = originalCount;
+          alert('Erreur lors du like: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          setTimeout(() => { btn.querySelector('svg').style.animation = ''; }, 500);
         }
-        btn.classList.toggle('liked-active', res.liked);
-        btn.querySelector('span').textContent = res.likes_count;
-        btn.querySelector('svg').style.animation = 'heartPulse 0.5s ease';
-        setTimeout(() => { btn.querySelector('svg').style.animation = ''; }, 500);
       });
     });
 

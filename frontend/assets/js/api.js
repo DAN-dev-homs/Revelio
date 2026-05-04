@@ -31,6 +31,7 @@ const api = (() => {
         (
           key.endsWith('_url') ||
           key === 'avatar_url' ||
+          key === 'image_url' ||
           key.endsWith('_avatar') ||
           key.includes('avatar')
         )
