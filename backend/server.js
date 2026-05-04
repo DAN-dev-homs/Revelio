@@ -7,41 +7,49 @@ const path    = require('path');
 const { initDB } = require('./database');
 
 const app  = express();
-const db   = initDB();
 const PORT = process.env.PORT || 3000;
 
-// ── Middleware ───────────────────────────────────────────
-app.use(cors({ origin: '*' }));
-app.use(express.json());
+async function start() {
+  const db = await initDB();
 
-// Servir le frontend statique
-app.use(express.static(path.join(__dirname, 'frontend')));
+  // ── Middleware ───────────────────────────────────────────
+  app.use(cors({ origin: '*' }));
+  app.use(express.json());
 
-// Servir les uploads statiquement
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+  // Servir le frontend statique
+  app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Injecter db dans les requêtes
-app.use((req, _res, next) => { req.db = db; next(); });
+  // Servir les uploads statiquement
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ── Routes API ───────────────────────────────────────────
-app.use('/api/auth',      require('./routes/auth'));
-app.use('/api/books',     require('./routes/books'));
-app.use('/api/community', require('./routes/community'));
-app.use('/api/profile',       require('./routes/profile'));
-app.use('/api/admin',         require('./routes/admin'));
-app.use('/api/notifications', require('./routes/notifications'));
+  // Injecter db dans les requêtes
+  app.use((req, _res, next) => { req.db = db; next(); });
 
-// ── SPA Fallback ─────────────────────────────────────────
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-});
+  // ── Routes API ───────────────────────────────────────────
+  app.use('/api/auth',      require('./routes/auth'));
+  app.use('/api/books',     require('./routes/books'));
+  app.use('/api/community', require('./routes/community'));
+  app.use('/api/profile',       require('./routes/profile'));
+  app.use('/api/admin',         require('./routes/admin'));
+  app.use('/api/notifications', require('./routes/notifications'));
 
-// ── Gestion globale des erreurs ──────────────────────────
-app.use((err, _req, res, _next) => {
-  console.error('[ERROR]', err.message);
-  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
-});
+  // ── SPA Fallback ─────────────────────────────────────────
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Revelio API running at http://localhost:${PORT}`);
+  // ── Gestion globale des erreurs ──────────────────────────
+  app.use((err, _req, res, _next) => {
+    console.error('[ERROR]', err.message || err);
+    res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+  });
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Revelio API running at http://localhost:${PORT}`);
+  });
+}
+
+start().catch(err => {
+  console.error('[FATAL] Failed to start server:', err);
+  process.exit(1);
 });

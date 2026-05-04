@@ -9,9 +9,9 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 // ── Helper : log d'activité ──────────────────────────────
-function logActivity(db, userId, action, detail, ip) {
+async function logActivity(db, userId, action, detail, ip) {
   try {
-    db.prepare('INSERT INTO activity_log (user_id, action, detail, ip) VALUES (?, ?, ?, ?)')
+    await db.prepare('INSERT INTO activity_log (user_id, action, detail, ip) VALUES (?, ?, ?, ?)')
       .run(userId || null, action, detail || null, ip || null);
   } catch (e) { /* silently ignore */ }
 }
@@ -38,28 +38,30 @@ router.use(isAdmin);
 // ═══════════════════════════════════════════════════════
 
 // GET /api/admin/stats
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   const db = req.db;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 19).replace('T', ' ');
 
-  const totalUsers      = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
-  const totalAdmins     = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'admin'").get().c;
-  const newUsersMonth   = db.prepare("SELECT COUNT(*) as c FROM users WHERE created_at >= datetime('now', '-30 days')").get().c;
-  const totalBooks      = db.prepare('SELECT COUNT(*) as c FROM books').get().c;
-  const booksWithVideo  = db.prepare('SELECT COUNT(*) as c FROM books WHERE video_url IS NOT NULL').get().c;
-  const booksWithAudio  = db.prepare('SELECT COUNT(*) as c FROM books WHERE audio_url IS NOT NULL').get().c;
-  const totalPosts      = db.prepare('SELECT COUNT(*) as c FROM posts').get().c;
-  const totalComments   = db.prepare('SELECT COUNT(*) as c FROM comments').get().c;
-  const totalLikes      = db.prepare('SELECT SUM(likes_count) as s FROM posts').get().s || 0;
-  const totalSaved      = db.prepare('SELECT COUNT(*) as c FROM saved_books').get().c;
+  const totalUsers      = (await db.prepare('SELECT COUNT(*) as c FROM users').get()).c;
+  const totalAdmins     = (await db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'admin'").get()).c;
+  const newUsersMonth   = (await db.prepare('SELECT COUNT(*) as c FROM users WHERE created_at >= ?').get(thirtyDaysAgo)).c;
+  const totalBooks      = (await db.prepare('SELECT COUNT(*) as c FROM books').get()).c;
+  const booksWithVideo  = (await db.prepare('SELECT COUNT(*) as c FROM books WHERE video_url IS NOT NULL').get()).c;
+  const booksWithAudio  = (await db.prepare('SELECT COUNT(*) as c FROM books WHERE audio_url IS NOT NULL').get()).c;
+  const totalPosts      = (await db.prepare('SELECT COUNT(*) as c FROM posts').get()).c;
+  const totalComments   = (await db.prepare('SELECT COUNT(*) as c FROM comments').get()).c;
+  const totalLikes      = (await db.prepare('SELECT SUM(likes_count) as s FROM posts').get()).s || 0;
+  const totalSaved      = (await db.prepare('SELECT COUNT(*) as c FROM saved_books').get()).c;
 
-  const recentActivity  = db.prepare(`
+  const recentActivity  = await db.prepare(`
     SELECT al.*, u.name as user_name, u.email as user_email
     FROM activity_log al
     LEFT JOIN users u ON u.id = al.user_id
     ORDER BY al.created_at DESC LIMIT 20
   `).all();
 
-  const recentUsers = db.prepare(`
+  const recentUsers = await db.prepare(`
     SELECT id, name, email, role, created_at FROM users
     ORDER BY created_at DESC LIMIT 5
   `).all();
@@ -77,8 +79,8 @@ router.get('/stats', (req, res) => {
 // ── GESTION DES LIVRES ──────────────────────────────────
 // ═══════════════════════════════════════════════════════
 
-router.get('/books', (req, res) => {
-  const books = req.db.prepare('SELECT * FROM books ORDER BY created_at DESC').all();
+router.get('/books', async (req, res) => {
+  const books = await req.db.prepare('SELECT * FROM books ORDER BY created_at DESC').all();
   res.json(books);
 });
 
@@ -88,7 +90,7 @@ const cpUpload = upload.fields([
   { name: 'audio', maxCount: 1 }
 ]);
 
-router.post('/books', cpUpload, (req, res) => {
+router.post('/books', cpUpload, async (req, res) => {
   const { title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url, tags } = req.body;
   if (!title || !author || !category || !duration_min || !level)
     return res.status(400).json({ error: 'Missing required fields' });
@@ -97,7 +99,7 @@ router.post('/books', cpUpload, (req, res) => {
   const video_url = req.files?.['video'] ? `/uploads/media/${req.files['video'][0].filename}` : null;
   const audio_url = req.files?.['audio'] ? `/uploads/media/${req.files['audio'][0].filename}` : null;
 
-  const result = req.db.prepare(`
+  const result = await req.db.prepare(`
     INSERT INTO books (title, author, cover_color, cover_url, category, duration_min, level, video_url, audio_url, summary, key_points, amazon_url)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(title, author, cover_color || '#4CAF93', cover_url, category, parseInt(duration_min), level, video_url, audio_url, summary || null, key_points || null, amazon_url || null);
@@ -108,32 +110,35 @@ router.post('/books', cpUpload, (req, res) => {
     try {
       const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
       const insTag = req.db.prepare('INSERT INTO book_tags (book_id, type, name) VALUES (?, ?, ?)');
-      parsedTags.forEach(t => insTag.run(bookId, t.type || 'theme', t.name));
+      for (const t of parsedTags) {
+        await insTag.run(bookId, t.type || 'theme', t.name);
+      }
     } catch (e) { console.error('Tag parse error', e); }
   }
 
-  const users = req.db.prepare('SELECT id FROM users').all();
+  const users = await req.db.prepare('SELECT id FROM users').all();
   const insertNotif = req.db.prepare(
     'INSERT INTO notifications (user_id, type, content, is_read) VALUES (?, ?, ?, ?)'
   );
-  users.forEach(u => {
-    insertNotif.run(u.id, 'system', `Nouveau livre disponible : "${title}"`, 0);
-  });
+  for (const u of users) {
+    await insertNotif.run(u.id, 'system', `Nouveau livre disponible : "${title}"`, 0);
+  }
 
-  logActivity(req.db, req.user.id, 'create_book', `Created book: "${title}"`, req.ip);
-  res.status(201).json(req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId));
+  await logActivity(req.db, req.user.id, 'create_book', `Created book: "${title}"`, req.ip);
+  const createdBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
+  res.status(201).json(createdBook);
 });
 
-router.get('/books/:id', (req, res) => {
-  const book = req.db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
+router.get('/books/:id', async (req, res) => {
+  const book = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
   if (!book) return res.status(404).json({ error: 'Book not found' });
-  const tags = req.db.prepare('SELECT type, name FROM book_tags WHERE book_id = ?').all(book.id);
+  const tags = await req.db.prepare('SELECT type, name FROM book_tags WHERE book_id = ?').all(book.id);
   res.json({ ...book, tags });
 });
 
-router.put('/books/:id', cpUpload, (req, res) => {
+router.put('/books/:id', cpUpload, async (req, res) => {
   const bookId = parseInt(req.params.id);
-  const existingBook = req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
+  const existingBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
   if (!existingBook) return res.status(404).json({ error: 'Book not found' });
 
   const { title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url, tags } = req.body;
@@ -142,7 +147,7 @@ router.put('/books/:id', cpUpload, (req, res) => {
   const video_url = req.files?.['video'] ? `/uploads/media/${req.files['video'][0].filename}` : existingBook.video_url;
   const audio_url = req.files?.['audio'] ? `/uploads/media/${req.files['audio'][0].filename}` : existingBook.audio_url;
 
-  req.db.prepare(`
+  await req.db.prepare(`
     UPDATE books 
     SET title = ?, author = ?, cover_color = ?, cover_url = ?, category = ?, duration_min = ?, level = ?, video_url = ?, audio_url = ?, summary = ?, key_points = ?, amazon_url = ?
     WHERE id = ?
@@ -165,20 +170,23 @@ router.put('/books/:id', cpUpload, (req, res) => {
   if (tags) {
     try {
       const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
-      req.db.prepare('DELETE FROM book_tags WHERE book_id = ?').run(bookId);
+      await req.db.prepare('DELETE FROM book_tags WHERE book_id = ?').run(bookId);
       const insTag = req.db.prepare('INSERT INTO book_tags (book_id, type, name) VALUES (?, ?, ?)');
-      parsedTags.forEach(t => insTag.run(bookId, t.type || 'theme', t.name));
+      for (const t of parsedTags) {
+        await insTag.run(bookId, t.type || 'theme', t.name);
+      }
     } catch (e) { console.error('Tag parse error', e); }
   }
 
-  logActivity(req.db, req.user.id, 'update_book', `Updated book: "${title || existingBook.title}"`, req.ip);
-  res.json(req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId));
+  await logActivity(req.db, req.user.id, 'update_book', `Updated book: "${title || existingBook.title}"`, req.ip);
+  const updatedBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
+  res.json(updatedBook);
 });
 
-router.delete('/books/:id', (req, res) => {
-  const book = req.db.prepare('SELECT title FROM books WHERE id = ?').get(req.params.id);
-  req.db.prepare('DELETE FROM books WHERE id = ?').run(req.params.id);
-  logActivity(req.db, req.user.id, 'delete_book', `Deleted book: "${book?.title}"`, req.ip);
+router.delete('/books/:id', async (req, res) => {
+  const book = await req.db.prepare('SELECT title FROM books WHERE id = ?').get(req.params.id);
+  await req.db.prepare('DELETE FROM books WHERE id = ?').run(req.params.id);
+  await logActivity(req.db, req.user.id, 'delete_book', `Deleted book: "${book?.title}"`, req.ip);
   res.json({ success: true });
 });
 
@@ -186,21 +194,21 @@ router.delete('/books/:id', (req, res) => {
 // ── GESTION DES CATEGORIES ──────────────────────────────
 // ═══════════════════════════════════════════════════════
 
-router.get('/categories', (req, res) => {
-  const categories = req.db.prepare('SELECT * FROM categories ORDER BY name ASC').all();
+router.get('/categories', async (req, res) => {
+  const categories = await req.db.prepare('SELECT * FROM categories ORDER BY name ASC').all();
   res.json(categories);
 });
 
-router.post('/categories', (req, res) => {
+router.post('/categories', async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
-  
+
   try {
-    const result = req.db.prepare('INSERT INTO categories (name) VALUES (?)').run(name.trim());
-    logActivity(req.db, req.user.id, 'create_category', `Created category: "${name}"`, req.ip);
+    const result = await req.db.prepare('INSERT INTO categories (name) VALUES (?)').run(name.trim());
+    await logActivity(req.db, req.user.id, 'create_category', `Created category: "${name}"`, req.ip);
     res.status(201).json({ id: result.lastInsertRowid, name: name.trim() });
   } catch (err) {
-    if (err.message.includes('UNIQUE constraint failed')) {
+    if (err.message.includes('UNIQUE constraint failed') || err.code === '23505') {
       return res.status(409).json({ error: 'Category already exists' });
     }
     res.status(500).json({ error: 'Database error' });
@@ -212,8 +220,8 @@ router.post('/categories', (req, res) => {
 // ═══════════════════════════════════════════════════════
 
 // GET /api/admin/users
-router.get('/users', (req, res) => {
-  const users = req.db.prepare(`
+router.get('/users', async (req, res) => {
+  const users = await req.db.prepare(`
     SELECT id, name, email, role, avatar_url, streak_days, total_hours, created_at 
     FROM users ORDER BY created_at DESC
   `).all();
@@ -221,33 +229,33 @@ router.get('/users', (req, res) => {
 });
 
 // POST /api/admin/users — Créer un compte (admin ou user)
-router.post('/users', (req, res) => {
+router.post('/users', async (req, res) => {
   const { name, email, password, role } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' });
 
-  const exists = req.db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const exists = await req.db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (exists) return res.status(409).json({ error: 'Email already registered' });
 
   const hash = bcrypt.hashSync(password, 10);
   const assignedRole = role === 'admin' ? 'admin' : 'user';
-  const result = req.db.prepare(
+  const result = await req.db.prepare(
     'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
   ).run(name, email, hash, assignedRole);
 
-  req.db.prepare(
+  await req.db.prepare(
     'INSERT INTO notifications (user_id, type, content, is_read) VALUES (?, ?, ?, ?)'
   ).run(result.lastInsertRowid, 'system', 'Bienvenue sur Revelio ! Explorez votre première lecture.', 0);
 
-  logActivity(req.db, req.user.id, 'create_user', `Created ${assignedRole} account for: ${email}`, req.ip);
+  await logActivity(req.db, req.user.id, 'create_user', `Created ${assignedRole} account for: ${email}`, req.ip);
   res.status(201).json({ success: true, id: result.lastInsertRowid });
 });
 
 // PATCH /api/admin/users/:id — Modifier un utilisateur
-router.patch('/users/:id', (req, res) => {
+router.patch('/users/:id', async (req, res) => {
   const { name, email, role } = req.body;
   const userId = parseInt(req.params.id);
 
-  const user = req.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const user = await req.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   const updName  = name  || user.name;
@@ -259,17 +267,18 @@ router.patch('/users/:id', (req, res) => {
     return res.status(400).json({ error: 'You cannot demote yourself' });
   }
 
-  req.db.prepare('UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?')
+  await req.db.prepare('UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?')
     .run(updName, updEmail, updRole, userId);
 
-  logActivity(req.db, req.user.id, 'update_user', `Updated user ${user.email}: role=${updRole}`, req.ip);
-  res.json({ success: true, user: req.db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(userId) });
+  await logActivity(req.db, req.user.id, 'update_user', `Updated user ${user.email}: role=${updRole}`, req.ip);
+  const updatedUser = await req.db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(userId);
+  res.json({ success: true, user: updatedUser });
 });
 
 // POST /api/admin/users/:id/reset-password — Réinitialiser le MDP
-router.post('/users/:id/reset-password', (req, res) => {
+router.post('/users/:id/reset-password', async (req, res) => {
   const userId = parseInt(req.params.id);
-  const user = req.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const user = await req.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   // Générer un mot de passe temporaire
@@ -278,20 +287,20 @@ router.post('/users/:id/reset-password', (req, res) => {
   for (let i = 0; i < 8; i++) tempPassword += chars[Math.floor(Math.random() * chars.length)];
 
   const hash = bcrypt.hashSync(tempPassword, 10);
-  req.db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, userId);
+  await req.db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, userId);
 
-  logActivity(req.db, req.user.id, 'reset_password', `Reset password for user: ${user.email}`, req.ip);
+  await logActivity(req.db, req.user.id, 'reset_password', `Reset password for user: ${user.email}`, req.ip);
   res.json({ success: true, tempPassword, message: `Mot de passe temporaire pour ${user.email}` });
 });
 
 // DELETE /api/admin/users/:id
-router.delete('/users/:id', (req, res) => {
+router.delete('/users/:id', async (req, res) => {
   if (parseInt(req.params.id) === req.user.id)
     return res.status(400).json({ error: 'Cannot delete yourself' });
 
-  const user = req.db.prepare('SELECT email FROM users WHERE id = ?').get(req.params.id);
-  req.db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
-  logActivity(req.db, req.user.id, 'delete_user', `Deleted user: ${user?.email}`, req.ip);
+  const user = await req.db.prepare('SELECT email FROM users WHERE id = ?').get(req.params.id);
+  await req.db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  await logActivity(req.db, req.user.id, 'delete_user', `Deleted user: ${user?.email}`, req.ip);
   res.json({ success: true });
 });
 
