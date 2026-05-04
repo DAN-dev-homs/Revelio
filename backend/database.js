@@ -427,9 +427,20 @@ async function initDB() {
 
   const db = createSqliteClient();
   await ensureSchema(db);
+  await ensureAdminUser(db);
   const count = await db.prepare('SELECT COUNT(*) as c FROM users').get();
   if (!count || !count.c) await seedData(db);
   return db;
+}
+
+async function ensureAdminUser(db) {
+  const existingAdmin = await db.prepare('SELECT id FROM users WHERE email = ?').get('danielhomelema22@gmail.com');
+  if (!existingAdmin) {
+    const adminHash = bcrypt.hashSync('Lungu@221000', 10);
+    await db.prepare(
+      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
+    ).run('danielhomelema22', 'danielhomelema22@gmail.com', adminHash, 'admin');
+  }
 }
 
 module.exports = { initDB };
