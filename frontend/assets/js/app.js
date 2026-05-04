@@ -2,6 +2,11 @@
 // REVELIO — SPA Router & App Shell (app.js)
 // ============================================================
 
+// Protection contre l'exécution en dehors du navigateur
+if (typeof window === 'undefined') {
+  module.exports = {};
+} else {
+
 const App = (() => {
   const PAGES = ['home', 'explore', 'community', 'profile', 'book-detail'];
   let currentPage = 'home';
@@ -24,10 +29,12 @@ const App = (() => {
     await navigateTo('home');
 
     // Écouter les changements de langue
-    window.addEventListener('langChanged', () => {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      loadPage(currentPage, currentParams);
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('langChanged', () => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        loadPage(currentPage, currentParams);
+      });
+    }
   }
 
   /** Construit le shell de l'app (nav + conteneurs de pages) */
@@ -383,4 +390,10 @@ const App = (() => {
 })();
 
 window.App = App;
-window.addEventListener('DOMContentLoaded', () => App.init());
+
+} // Fin de la protection contre l'exécution en dehors du navigateur
+
+// Initialisation quand le DOM est prêt (uniquement dans le navigateur)
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => App.init());
+}

@@ -2,6 +2,11 @@
 // REVELIO — Community Screen (community.js)
 // ============================================================
 
+// Protection contre l'exécution en dehors du navigateur
+if (typeof window === 'undefined') {
+  module.exports = {};
+} else {
+
 const CommunityPage = (() => {
   let activeTab = 'community';
   let posts     = [];
@@ -262,3 +267,5 @@ const CommunityPage = (() => {
 })();
 
 window.CommunityPage = CommunityPage;
+
+} // Fin de la protection contre l'exécution en dehors du navigateur

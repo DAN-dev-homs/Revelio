@@ -19,8 +19,8 @@ COPY backend/ ./
 # Copie le frontend
 COPY frontend ./frontend
 
-# Copie les autres fichiers nécessaires (si besoin)
-# COPY uploads ./uploads  # Si uploads doit être initialisé
+# Créer les dossiers uploads nécessaires
+RUN mkdir -p uploads/avatars uploads/media
 
 # Expose le port
 EXPOSE 3000

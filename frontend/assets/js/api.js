@@ -3,6 +3,11 @@
 // Toutes les appels REST vers le backend Express
 // ============================================================
 
+// Protection contre l'exécution en dehors du navigateur
+if (typeof window === 'undefined') {
+  module.exports = {};
+} else {
+
 const API_BASE = '/api';
 const API_ORIGIN = API_BASE.replace('/api', '');
 
@@ -142,3 +147,5 @@ const api = (() => {
 })();
 
 window.api = api;
+
+} // Fin de la protection contre l'exécution en dehors du navigateur
