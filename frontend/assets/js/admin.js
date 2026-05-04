@@ -2,7 +2,7 @@
 // REVELIO — Admin Panel JS (admin.js)
 // ============================================================
 
-const API = 'http://localhost:3000/api';
+const API = '/api';
 let adminToken = localStorage.getItem('admin_token');
 let adminUser  = JSON.parse(localStorage.getItem('admin_user') || 'null');
 

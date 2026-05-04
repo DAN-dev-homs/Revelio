@@ -32,6 +32,7 @@ Le serveur démarre sur le port 3000 (ou PORT défini).
 
 - `JWT_SECRET` : Clé secrète pour JWT (défaut: revelio_secret_2024)
 - `PORT` : Port du serveur (défaut: 3000)
+- `DATABASE_URL` : URL de connexion PostgreSQL pour déployer sur Render ou un hébergeur externe
 
 Créez un fichier `.env` dans `backend/` si nécessaire.
 

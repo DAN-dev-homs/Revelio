@@ -3,7 +3,7 @@
 // Toutes les appels REST vers le backend Express
 // ============================================================
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '/api';
 const API_ORIGIN = API_BASE.replace('/api', '');
 
 const api = (() => {
