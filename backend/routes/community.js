@@ -3,6 +3,9 @@
 // ============================================================
 const router = require('express').Router();
 const { auth } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // GET /api/community/posts
 router.get('/posts', auth, async (req, res) => {
@@ -31,7 +34,7 @@ router.get('/posts', auth, async (req, res) => {
 
 // POST /api/community/posts — créer un post
 router.post('/posts', auth, async (req, res) => {
-  const { type, content } = req.body;
+  const { type, content, image_url } = req.body;
   if (!type || !content?.trim())
     return res.status(400).json({ error: 'type and content are required' });
   if (!['testimony', 'thought'].includes(type))
@@ -40,8 +43,8 @@ router.post('/posts', auth, async (req, res) => {
     return res.status(400).json({ error: 'Content too long (max 1000 chars)' });
 
   const result = await req.db.prepare(
-    'INSERT INTO posts (user_id, type, content) VALUES (?, ?, ?)'
-  ).run(req.user.id, type, content.trim());
+    'INSERT INTO posts (user_id, type, content, image_url) VALUES (?, ?, ?, ?)'
+  ).run(req.user.id, type, content.trim(), image_url || null);
 
   const post = await req.db.prepare(
     'SELECT p.*, u.name AS author_name, u.avatar_url AS author_avatar FROM posts p JOIN users u ON u.id = p.user_id WHERE p.id = ?'
@@ -62,8 +65,9 @@ router.post('/posts/:id/like', auth, async (req, res) => {
 
   if (existing) {
     await req.db.prepare('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?').run(postId, req.user.id);
-    await req.db.prepare('UPDATE posts SET likes_count = MAX(0, likes_count - 1) WHERE id = ?').run(postId);
-    res.json({ liked: false });
+    await req.db.prepare('UPDATE posts SET likes_count = CASE WHEN likes_count > 0 THEN likes_count - 1 ELSE 0 END WHERE id = ?').run(postId);
+    const updated = await req.db.prepare('SELECT likes_count FROM posts WHERE id = ?').get(postId);
+    res.json({ liked: false, likes_count: updated.likes_count });
   } else {
     await req.db.prepare('INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)').run(postId, req.user.id);
     await req.db.prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?').run(postId);
@@ -75,7 +79,8 @@ router.post('/posts/:id/like', auth, async (req, res) => {
       ).run(post.user_id, 'like', `${liker?.name || 'Quelqu’un'} a aimé votre post.`, 0);
     }
 
-    res.json({ liked: true });
+    const updated = await req.db.prepare('SELECT likes_count FROM posts WHERE id = ?').get(postId);
+    res.json({ liked: true, likes_count: updated.likes_count });
   }
 });
 
@@ -115,6 +120,29 @@ router.post('/posts/:id/comments', auth, async (req, res) => {
   }
 
   res.status(201).json(comment);
+});
+
+// POST /api/community/upload-image — uploader une image pour un post
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '..', 'uploads', 'media');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `post-${req.user.id}-${Date.now()}${ext}`);
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB max
+
+router.post('/upload-image', auth, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  const imageUrl = `/uploads/media/${req.file.filename}`;
+  res.json({ success: true, image_url: imageUrl });
 });
 
 module.exports = router;

@@ -4,6 +4,7 @@
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const compression = require('compression');
 const { initDB } = require('./database');
 
 const app  = express();

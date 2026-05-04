@@ -138,6 +138,7 @@ async function ensureSchema(db) {
         user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         type        TEXT    NOT NULL,
         content     TEXT    NOT NULL,
+        image_url   TEXT,
         likes_count INTEGER DEFAULT 0,
         created_at  TEXT    DEFAULT (datetime('now'))
       );
@@ -256,6 +257,7 @@ async function ensureSchema(db) {
         user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         type        TEXT    NOT NULL,
         content     TEXT    NOT NULL,
+        image_url   TEXT,
         likes_count INTEGER DEFAULT 0,
         created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );

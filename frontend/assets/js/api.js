@@ -91,7 +91,20 @@ const api = (() => {
 
     // Community
     getPosts:       ()          => get('/community/posts'),
-    createPost:     (type, content) => post('/community/posts', { type, content }),
+    createPost:     (type, content, image_url) => post('/community/posts', { type, content, image_url }),
+    uploadPostImage: async (file) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`${API_BASE}/community/upload-image`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData,
+        cache: 'no-store'
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      return normalizeMediaUrls(data);
+    },
     toggleLike:     (id)        => post(`/community/posts/${id}/like`),
     getComments:    (id)        => get(`/community/posts/${id}/comments`),
     addComment:     (id, content) => post(`/community/posts/${id}/comments`, { content }),

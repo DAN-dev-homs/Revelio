@@ -6,6 +6,7 @@ const App = (() => {
   const PAGES = ['home', 'explore', 'community', 'profile', 'book-detail'];
   let currentPage = 'home';
   let currentParams = {};
+  let selectedImageUrl = null;
 
   /** Initialise l'application */
   async function init() {
@@ -76,6 +77,21 @@ const App = (() => {
         <textarea class="modal-textarea" id="post-content" maxlength="1000"
           data-i18n-placeholder="community.share_placeholder"
           placeholder="${i18n.t('community.share_placeholder')}"></textarea>
+        
+        <!-- Image preview -->
+        <div id="post-image-preview" style="display:none; margin: 12px 0; border-radius: var(--border-radius-md); overflow: hidden; max-height: 200px;">
+          <img id="post-image-img" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+          <button id="remove-image-btn" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px;">×</button>
+        </div>
+
+        <!-- Upload button -->
+        <label style="display: block; margin-bottom: 12px; cursor: pointer;">
+          <input type="file" id="post-image-input" accept="image/*" style="display: none;">
+          <div style="border: 2px dashed var(--border-color); border-radius: var(--border-radius-md); padding: 12px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+            📸 Cliquez pour ajouter une image
+          </div>
+        </label>
+
         <button class="btn-primary" id="publish-btn" data-i18n="community.publish">
           ${i18n.t('community.publish')}
         </button>
@@ -101,6 +117,48 @@ const App = (() => {
         btn.classList.add('active');
       });
     });
+
+    // Upload d'image
+    const imageInput = document.getElementById('post-image-input');
+    if (imageInput) {
+      imageInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const publishBtn = document.getElementById('publish-btn');
+        publishBtn.disabled = true;
+        publishBtn.textContent = '⏳ Upload...';
+
+        try {
+          const result = await api.uploadPostImage(file);
+          selectedImageUrl = result.image_url;
+          
+          // Afficher l'aperçu
+          const preview = document.getElementById('post-image-preview');
+          const img = document.getElementById('post-image-img');
+          img.src = selectedImageUrl;
+          preview.style.display = 'block';
+          preview.style.position = 'relative';
+        } catch (err) {
+          alert('Erreur lors de l\'upload: ' + err.message);
+          imageInput.value = '';
+        } finally {
+          publishBtn.disabled = false;
+          publishBtn.textContent = i18n.t('community.publish');
+        }
+      });
+    }
+
+    // Supprimer l'image
+    const removeBtn = document.getElementById('remove-image-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        selectedImageUrl = null;
+        document.getElementById('post-image-preview').style.display = 'none';
+        imageInput.value = '';
+      });
+    }
 
     // Publier un post
     document.getElementById('publish-btn')?.addEventListener('click', submitPost);
@@ -162,6 +220,9 @@ const App = (() => {
     document.getElementById('post-overlay')?.classList.remove('active');
     const ta = document.getElementById('post-content');
     if (ta) ta.value = '';
+    selectedImageUrl = null;
+    document.getElementById('post-image-preview').style.display = 'none';
+    document.getElementById('post-image-input').value = '';
   }
 
   /** Soumet un nouveau post */
@@ -175,7 +236,7 @@ const App = (() => {
     btn.textContent = '...';
 
     try {
-      await api.createPost(type, content);
+      await api.createPost(type, content, selectedImageUrl);
       closePostModal();
       await navigateTo('community');
     } catch (err) {

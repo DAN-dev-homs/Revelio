@@ -67,10 +67,10 @@ const CommunityPage = (() => {
         const post = posts.find(p => p.id === id);
         if (post) {
           post.is_liked = res.liked;
-          post.likes_count += res.liked ? 1 : -1;
+          post.likes_count = res.likes_count;
         }
         btn.classList.toggle('liked-active', res.liked);
-        btn.querySelector('span').textContent = post?.likes_count || 0;
+        btn.querySelector('span').textContent = res.likes_count;
         btn.querySelector('svg').style.animation = 'heartPulse 0.5s ease';
         setTimeout(() => { btn.querySelector('svg').style.animation = ''; }, 500);
       });
@@ -176,6 +176,9 @@ const CommunityPage = (() => {
           </div>
         </div>
         <p class="post-content">${post.content}</p>
+        ${post.image_url ? `<div class="post-image" style="margin-top:12px; border-radius:16px; overflow:hidden;
+          background-image:url('${post.image_url}'); background-size:cover; background-position:center; height:220px;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);"></div>` : ''}
         <div class="post-actions">
           <button class="post-action-btn ${post.is_liked ? 'liked-active' : ''}"
             data-post-id="${post.id}" aria-label="Like">
