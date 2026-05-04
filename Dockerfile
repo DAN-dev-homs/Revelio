@@ -7,8 +7,8 @@ RUN apk add --no-cache python3 make g++
 # Définit le répertoire de travail
 WORKDIR /app
 
-# Copie les fichiers package.json et package-lock.json du backend
-COPY backend/package*.json ./
+# Copie les fichiers package.json et package-lock.json de la racine
+COPY package*.json ./
 
 # Installe les dépendances
 RUN npm install
