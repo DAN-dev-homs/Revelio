@@ -435,12 +435,18 @@ async function initDB() {
 }
 
 async function ensureAdminUser(db) {
-  const existingAdmin = await db.prepare('SELECT id FROM users WHERE email = ?').get('danielhomelema22@gmail.com');
+  const adminEmail = 'danielhomelema22@gmail.com';
+  const adminHash = bcrypt.hashSync('Lungu@221000', 10);
+  const existingAdmin = await db.prepare('SELECT id, role FROM users WHERE email = ?').get(adminEmail);
+
   if (!existingAdmin) {
-    const adminHash = bcrypt.hashSync('Lungu@221000', 10);
     await db.prepare(
       'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
-    ).run('danielhomelema22', 'danielhomelema22@gmail.com', adminHash, 'admin');
+    ).run('danielhomelema22', adminEmail, adminHash, 'admin');
+  } else if (existingAdmin.role !== 'admin') {
+    await db.prepare(
+      'UPDATE users SET role = ?, password = ? WHERE id = ?'
+    ).run('admin', adminHash, existingAdmin.id);
   }
 }
 
