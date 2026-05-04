@@ -420,6 +420,7 @@ async function initDB() {
     await pool.connect().then(client => client.release());
     const db = createPostgresClient(pool);
     await ensureSchema(db);
+    await ensureAdminUser(db);
     const count = await db.prepare('SELECT COUNT(*) as c FROM users').get();
     if (!count || !count.c) await seedData(db);
     return db;
