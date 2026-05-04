@@ -316,6 +316,11 @@ async function seedData(db) {
   ).run('Sarah Mitchell (Admin)', 'sarah.m@example.com', hash, 'admin', 7, 24, null);
   const adminId = resultAdmin.lastInsertRowid;
 
+  const resultNewAdmin = await db.prepare(
+    'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
+  ).run('danielhomelema22', 'danielhomelema@gmail.com', hash, 'admin');
+  const newAdminId = resultNewAdmin.lastInsertRowid;
+
   const resultUser = await db.prepare(
     'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
   ).run('John Doe', 'user@example.com', hash, 'user');
@@ -398,6 +403,7 @@ async function seedData(db) {
   }
 
   await db.prepare('INSERT INTO notifications (user_id, type, content, is_read) VALUES (?, ?, ?, ?)').run(adminId, 'system', 'Bienvenue sur Revelio ! Explorez votre première lecture.', 0);
+  await db.prepare('INSERT INTO notifications (user_id, type, content, is_read) VALUES (?, ?, ?, ?)').run(newAdminId, 'system', 'Bienvenue sur Revelio ! Explorez votre première lecture.', 0);
   await db.prepare('INSERT INTO notifications (user_id, type, content, is_read) VALUES (?, ?, ?, ?)').run(adminId, 'like', 'Un membre a aimé votre post.', 0);
 
   console.log('✅ Database seeded successfully (with admin user and new Book model)');
