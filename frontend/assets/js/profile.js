@@ -59,6 +59,27 @@ const ProfilePage = (() => {
         <div>
           <div class="profile-name">${profile.name}</div>
           <div class="profile-email">${profile.email}</div>
+          ${profile.badge ? `
+            <div class="profile-badge" style="margin-top: 8px;">
+              <span class="badge badge-${profile.badge}" style="
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                ${profile.badge === 'bronze' ? 'background: linear-gradient(135deg, #CD7F32, #B8860B); color: white;' : ''}
+                ${profile.badge === 'silver' ? 'background: linear-gradient(135deg, #C0C0C0, #808080); color: white;' : ''}
+                ${profile.badge === 'gold' ? 'background: linear-gradient(135deg, #FFD700, #FFA500); color: #333;' : ''}
+                ${profile.badge === 'diamond' ? 'background: linear-gradient(135deg, #B9F2FF, #00CED1); color: white;' : ''}
+              ">
+                ${profile.badge === 'bronze' ? '🥉 Bronze' : ''}
+                ${profile.badge === 'silver' ? '🥈 Silver' : ''}
+                ${profile.badge === 'gold' ? '🥇 Gold' : ''}
+                ${profile.badge === 'diamond' ? '💎 Diamond' : ''}
+              </span>
+            </div>
+          ` : ''}
         </div>
       </div>
 
