@@ -307,33 +307,67 @@ const BookDetailPage = (() => {
     const summarySection = container.querySelector('#section-summary');
     if (summarySection) {
       let readingStartTime = null;
-      let totalReadingTime = 0;
       let readingProgressInterval = null;
+      let hasMarkedComplete = false;
+      
+      // Ajouter un indicateur de progression visible
+      const progressIndicator = document.createElement('div');
+      progressIndicator.style.cssText = `
+        position: sticky;
+        top: 10px;
+        background: var(--primary);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        z-index: 10;
+        text-align: center;
+        max-width: 200px;
+        margin-left: auto;
+        margin-right: auto;
+      `;
+      progressIndicator.textContent = '📖 Lecture en cours... 0%';
+      summarySection.insertBefore(progressIndicator, summarySection.firstChild);
       
       const startReadingTracking = () => {
         if (!readingStartTime) {
           readingStartTime = Date.now();
+          console.log('📖 Début du suivi de lecture pour:', b.title);
+          
           readingProgressInterval = setInterval(() => {
             if (readingStartTime) {
-              totalReadingTime = (Date.now() - readingStartTime) / 1000; // en secondes
+              const elapsedSeconds = (Date.now() - readingStartTime) / 1000;
               
-              // Estimer la progression basée sur le temps de lecture (200 mots/min = 3.3 mots/sec)
-              const estimatedWordsPerMinute = 200;
-              const wordsPerSecond = estimatedWordsPerMinute / 60;
-              const estimatedTotalWords = (b.summary || '').split(' ').length;
-              const estimatedReadingTimeMinutes = estimatedTotalWords / estimatedWordsPerMinute;
-              const estimatedReadingTimeSeconds = estimatedReadingTimeMinutes * 60;
+              // Utiliser reading_time_min du livre (5 minutes par défaut)
+              const readingTimeMinutes = b.reading_time_min || 5;
+              const totalReadingSeconds = readingTimeMinutes * 60;
               
-              const progress = Math.min(100, Math.round((totalReadingTime / estimatedReadingTimeSeconds) * 100));
+              const progress = Math.min(100, Math.round((elapsedSeconds / totalReadingSeconds) * 100));
               
-              // Mettre à jour la progression tous les 5 secondes
-              if (totalReadingTime % 5 < 1) {
-                api.updateProgress(b.id, progress).catch(e => console.error(e));
+              progressIndicator.textContent = `📖 Lecture en cours... ${progress}%`;
+              progressIndicator.style.background = progress >= 100 ? 'var(--success)' : 'var(--primary)';
+              
+              // Mettre à jour la progression toutes les 10 secondes
+              if (elapsedSeconds % 10 < 1) {
+                console.log(`📊 Progression: ${progress}% - Temps écoulé: ${Math.round(elapsedSeconds)}s`);
+                api.updateProgress(b.id, progress).then(() => {
+                  console.log('✅ Progression mise à jour:', progress + '%');
+                }).catch(e => {
+                  console.error('❌ Erreur mise à jour progression:', e);
+                });
               }
               
-              // Marquer comme complété si 100%
-              if (progress >= 100) {
+              // Marquer comme complété et arrêter
+              if (progress >= 100 && !hasMarkedComplete) {
+                hasMarkedComplete = true;
                 clearInterval(readingProgressInterval);
+                progressIndicator.textContent = '✅ Lecture terminée ! 100%';
+                progressIndicator.style.background = 'var(--success)';
+                console.log('🎉 Lecture terminée pour:', b.title);
+                
+                // Mettre à jour une dernière fois à 100%
                 api.updateProgress(b.id, 100).catch(e => console.error(e));
               }
             }
@@ -343,6 +377,8 @@ const BookDetailPage = (() => {
       
       const pauseReadingTracking = () => {
         if (readingStartTime) {
+          const elapsedSeconds = (Date.now() - readingStartTime) / 1000;
+          console.log(`⏸️ Pause lecture - Temps écoulé: ${Math.round(elapsedSeconds)}s`);
           readingStartTime = null;
           if (readingProgressInterval) {
             clearInterval(readingProgressInterval);
@@ -351,26 +387,29 @@ const BookDetailPage = (() => {
         }
       };
       
-      // Observer quand l'utilisateur scroll dans la section du résumé
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            startReadingTracking();
-          } else {
-            pauseReadingTracking();
-          }
-        });
-      }, { threshold: 0.5 }); // 50% de la section visible
+      // Démarrer le tracking quand la page est visible
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          startReadingTracking();
+        } else {
+          pauseReadingTracking();
+        }
+      };
       
-      observer.observe(summarySection);
+      // Démarrer immédiatement si la page est visible
+      if (document.visibilityState === 'visible') {
+        setTimeout(startReadingTracking, 1000); // Démarrer après 1 seconde
+      }
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       
       // Nettoyer quand on quitte la page
       const cleanup = () => {
         pauseReadingTracking();
-        observer.disconnect();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        console.log('🧹 Nettoyage du suivi de lecture');
       };
       
-      // Ajouter un écouteur pour le nettoyage
       window.addEventListener('beforeunload', cleanup);
     }
   }

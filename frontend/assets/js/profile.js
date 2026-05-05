@@ -57,29 +57,24 @@ const ProfilePage = (() => {
         </div>
         <input type="file" id="avatar-input" accept="image/*" style="display:none;">
         <div>
-          <div class="profile-name">${profile.name}</div>
-          <div class="profile-email">${profile.email}</div>
-          ${profile.badge ? `
-            <div class="profile-badge" style="margin-top: 8px;">
-              <span class="badge badge-${profile.badge}" style="
-                display: inline-block;
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: 600;
-                text-transform: uppercase;
-                ${profile.badge === 'bronze' ? 'background: linear-gradient(135deg, #CD7F32, #B8860B); color: white;' : ''}
-                ${profile.badge === 'silver' ? 'background: linear-gradient(135deg, #C0C0C0, #808080); color: white;' : ''}
-                ${profile.badge === 'gold' ? 'background: linear-gradient(135deg, #FFD700, #FFA500); color: #333;' : ''}
-                ${profile.badge === 'diamond' ? 'background: linear-gradient(135deg, #B9F2FF, #00CED1); color: white;' : ''}
-              ">
-                ${profile.badge === 'bronze' ? '🥉 Bronze' : ''}
-                ${profile.badge === 'silver' ? '🥈 Silver' : ''}
-                ${profile.badge === 'gold' ? '🥇 Gold' : ''}
-                ${profile.badge === 'diamond' ? '💎 Diamond' : ''}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="profile-name">${profile.name}</div>
+            ${profile.badge ? `
+              <span class="profile-badge-icon" style="
+                font-size: 20px;
+                ${profile.badge === 'bronze' ? 'color: #CD7F32;' : ''}
+                ${profile.badge === 'silver' ? 'color: #C0C0C0;' : ''}
+                ${profile.badge === 'gold' ? 'color: #FFD700;' : ''}
+                ${profile.badge === 'diamond' ? 'color: #00CED1;' : ''}
+              " title="${profile.badge.charAt(0).toUpperCase() + profile.badge.slice(1)} badge">
+                ${profile.badge === 'bronze' ? '🥉' : ''}
+                ${profile.badge === 'silver' ? '🥈' : ''}
+                ${profile.badge === 'gold' ? '🥇' : ''}
+                ${profile.badge === 'diamond' ? '💎' : ''}
               </span>
-            </div>
-          ` : ''}
+            ` : ''}
+          </div>
+          <div class="profile-email">${profile.email}</div>
         </div>
       </div>
 
