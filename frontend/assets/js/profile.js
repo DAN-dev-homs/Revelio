@@ -11,23 +11,27 @@ const ProfilePage = (() => {
   async function render(container) {
     console.log('👤 Début chargement profil...');
     try {
+      console.log('🔄 Appel des APIs...');
       const [profile, savedBooks, postsHistory] = await Promise.all([
         api.getProfile().then(p => {
           console.log('✅ Profil reçu:', p);
           return p;
         }).catch(e => {
-          console.error('❌ Erreur chargement profil:', e);
+          console.error('❌ Erreur profil:', e);
           throw e;
         }),
         api.getSavedBooks().then(b => {
-          console.log('📚 Livres sauvegardés:', b?.length || 0);
+          console.log('📚 Livres sauvegardés reçus:', b);
           return b;
         }).catch(e => {
           console.error('❌ Erreur livres sauvegardés:', e);
           return [];
         }),
-        api.getPostsHistory().catch(() => {
-          console.log('📝 Historique posts: erreur, utilisation tableau vide');
+        api.getPostsHistory().then(posts => {
+          console.log('📝 Posts historique reçus:', posts);
+          return posts;
+        }).catch(e => {
+          console.error('❌ Erreur posts historique:', e);
           return [];
         }),
       ]);
