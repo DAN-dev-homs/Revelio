@@ -123,6 +123,32 @@ router.post('/posts/:id/comments', auth, async (req, res) => {
   res.status(201).json(comment);
 });
 
+// DELETE /api/community/posts/:id — supprimer un post
+router.delete('/posts/:id', auth, async (req, res) => {
+  const postId = parseInt(req.params.id);
+  
+  // Vérifier que le post existe et appartient à l'utilisateur
+  const post = await req.db.prepare('SELECT id, user_id FROM posts WHERE id = ?').get(postId);
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+  if (post.user_id !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+  
+  try {
+    // Supprimer les likes du post
+    await req.db.prepare('DELETE FROM post_likes WHERE post_id = ?').run(postId);
+    
+    // Supprimer les commentaires du post
+    await req.db.prepare('DELETE FROM comments WHERE post_id = ?').run(postId);
+    
+    // Supprimer le post
+    await req.db.prepare('DELETE FROM posts WHERE id = ?').run(postId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
 // POST /api/community/upload-image — uploader une image pour un post
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

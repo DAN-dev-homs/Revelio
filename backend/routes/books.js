@@ -175,4 +175,22 @@ router.patch('/:id/progress', auth, async (req, res) => {
   res.json({ success: true });
 });
 
+// DELETE /api/books/:id/save — supprimer un livre sauvegardé
+router.delete('/:id/save', auth, async (req, res) => {
+  try {
+    const result = await req.db.prepare(
+      'DELETE FROM saved_books WHERE user_id = ? AND book_id = ?'
+    ).run(req.user.id, req.params.id);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Book not found in saved books' });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error unsaving book:', error);
+    res.status(500).json({ error: 'Failed to unsave book' });
+  }
+});
+
 module.exports = router;

@@ -112,6 +112,7 @@ const api = (() => {
     getBookCategories: ()        => get('/books/categories'),
     getBookDetails: (id)        => get(`/books/${id}`),
     toggleSaveBook: (id)        => post(`/books/${id}/save`),
+    deleteSaveBook: (id)         => del(`/books/${id}/save`),
     toggleBookLike: (id)        => post(`/books/${id}/like`),
     updateProgress: (id, pct)   => patch(`/books/${id}/progress`, { progress_pct: pct }),
 
@@ -132,6 +133,7 @@ const api = (() => {
       return normalizeMediaUrls(data);
     },
     toggleLike:     (id)        => post(`/community/posts/${id}/like`),
+    deletePost:    (id)        => del(`/community/posts/${id}`),
     getComments:    (id)        => get(`/community/posts/${id}/comments`),
     addComment:     (id, content) => post(`/community/posts/${id}/comments`, { content }),
 

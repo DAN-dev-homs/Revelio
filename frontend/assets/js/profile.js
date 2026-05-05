@@ -151,16 +151,31 @@ const ProfilePage = (() => {
       <h2 class="section-title" data-i18n="profile.saved_books">${i18n.t('profile.saved_books')}</h2>
       ${savedBooks.length > 0 ? `
         <div class="h-scroll stagger-children" style="margin-bottom:var(--spacing-2xl)">
-          ${savedBooks.map(book => `
-            <div class="book-card hover-lift tap-feedback" style="min-width:140px;max-width:140px;cursor:pointer;" onclick="App.navigateTo('book-detail', {id: ${book.id}})">
-              <div class="book-cover" style="background:${book.cover_color};aspect-ratio:1;${book.cover_url ? `background-image:url('${book.cover_url}');background-size:cover;` : ''}">
-                <div class="book-cover-gradient"></div>
-              </div>
-              <div class="book-info">
-                <div class="book-title">${book.title}</div>
-                <div class="book-author">${book.author}</div>
-              </div>
-            </div>`).join('')}
+          ${savedBooks.map(b => `
+          <div class="saved-book-card" style="display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg-surface-2); border-radius:12px; margin-bottom:8px; position: relative;">
+            <button class="delete-saved-book-btn" data-book-id="${b.id}" style="
+              position: absolute;
+              top: 8px;
+              right: 8px;
+              background: #dc3545;
+              color: white;
+              border: none;
+              border-radius: 50%;
+              width: 24px;
+              height: 24px;
+              cursor: pointer;
+              font-size: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            " title="Supprimer des livres sauvegardés">×</button>
+            <div style="width:40px; height:56px; background:${b.cover_color}; border-radius:4px; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:600;">${b.title.substring(0,2).toUpperCase()}</div>
+            <div style="flex:1;">
+              <div style="font-weight:600; font-size:14px; margin-bottom:2px;">${b.title}</div>
+              <div style="font-size:12px; color:var(--text-secondary);">${b.author} • ${b.category}</div>
+            </div>
+          </div>
+        `).join('')}
         </div>` : `
         <div class="empty-state" style="margin-bottom:var(--spacing-2xl)">
           <p>Aucun livre sauvegardé</p>
@@ -171,7 +186,23 @@ const ProfilePage = (() => {
       <h2 class="section-title">Historique de mes posts</h2>
       <div style="max-height: 280px; overflow-y: auto; padding-right: 4px; margin-bottom: var(--spacing-xl);">
         ${postsHistory.length > 0 ? postsHistory.map(post => `
-          <article class="post-card" style="margin-bottom:12px;">
+          <article class="post-card" style="margin-bottom:12px; position: relative;">
+            <button class="delete-post-btn" data-post-id="${post.id}" style="
+              position: absolute;
+              top: 8px;
+              right: 8px;
+              background: #dc3545;
+              color: white;
+              border: none;
+              border-radius: 50%;
+              width: 24px;
+              height: 24px;
+              cursor: pointer;
+              font-size: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            " title="Supprimer ce post">×</button>
             <div class="post-meta" style="margin-bottom:8px;">
               <span class="post-type-badge">${post.type === 'testimony' ? 'Témoignage' : 'Pensée'}</span>
               <span class="post-time">${new Date(post.created_at).toLocaleString('fr-FR')}</span>
@@ -276,6 +307,46 @@ const ProfilePage = (() => {
     settingsBtn.addEventListener('click', () => {
       isSettingsView = true;
       renderCurrentView(container);
+    });
+
+    // Delete post buttons
+    container.querySelectorAll('.delete-post-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const postId = btn.dataset.postId;
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) {
+          try {
+            await api.deletePost(postId);
+            // Recharger les posts
+            const postsHistory = await api.getPostsHistory();
+            cachedPostsHistory = postsHistory;
+            renderCurrentView(container);
+          } catch (error) {
+            console.error('Failed to delete post:', error);
+            alert('Erreur lors de la suppression du post');
+          }
+        }
+      });
+    });
+
+    // Delete saved book buttons
+    container.querySelectorAll('.delete-saved-book-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const bookId = btn.dataset.bookId;
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce livre sauvegardé ?')) {
+          try {
+            await api.deleteSaveBook(bookId);
+            // Recharger les livres sauvegardés
+            const savedBooks = await api.getSavedBooks();
+            cachedSavedBooks = savedBooks;
+            renderCurrentView(container);
+          } catch (error) {
+            console.error('Failed to unsave book:', error);
+            alert('Erreur lors de la suppression du livre sauvegardé');
+          }
+        }
+      });
     });
   }
 
