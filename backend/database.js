@@ -175,6 +175,31 @@ async function ensureSchema(db) {
         created_at TEXT    DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS community_posts (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type        TEXT    NOT NULL,
+        content     TEXT    NOT NULL,
+        image_url   TEXT,
+        likes_count INTEGER DEFAULT 0,
+        created_at  TEXT    DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS community_comments (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id    INTEGER NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content    TEXT    NOT NULL,
+        created_at TEXT    DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS community_post_likes (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(post_id, user_id)
+      );
+
       CREATE TABLE IF NOT EXISTS notifications (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -308,6 +333,31 @@ async function ensureSchema(db) {
         user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content    TEXT    NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS community_posts (
+        id          SERIAL PRIMARY KEY,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type        TEXT    NOT NULL,
+        content     TEXT    NOT NULL,
+        image_url   TEXT,
+        likes_count INTEGER DEFAULT 0,
+        created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS community_comments (
+        id         SERIAL PRIMARY KEY,
+        post_id    INTEGER NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content    TEXT    NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS community_post_likes (
+        id      SERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(post_id, user_id)
       );
 
       CREATE TABLE IF NOT EXISTS notifications (

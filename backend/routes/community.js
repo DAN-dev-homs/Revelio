@@ -18,7 +18,7 @@ router.get('/posts', auth, async (req, res) => {
   `).all();
 
   const likedIds = (await req.db.prepare(
-    'SELECT post_id FROM book_likes WHERE user_id = ?'
+    'SELECT post_id FROM community_post_likes WHERE user_id = ?'
   ).all(req.user.id)).map(r => r.post_id);
 
   const commentCounts = (await req.db.prepare(
@@ -61,16 +61,16 @@ router.post('/posts/:id/like', auth, async (req, res) => {
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
   const existing = await req.db.prepare(
-    'SELECT id FROM book_likes WHERE post_id = ? AND user_id = ?'
+    'SELECT id FROM community_post_likes WHERE post_id = ? AND user_id = ?'
   ).get(postId, req.user.id);
 
   if (existing) {
-    await req.db.prepare('DELETE FROM book_likes WHERE post_id = ? AND user_id = ?').run(postId, req.user.id);
+    await req.db.prepare('DELETE FROM community_post_likes WHERE post_id = ? AND user_id = ?').run(postId, req.user.id);
     await req.db.prepare('UPDATE community_posts SET likes_count = CASE WHEN likes_count > 0 THEN likes_count - 1 ELSE 0 END WHERE id = ?').run(postId);
     const updated = await req.db.prepare('SELECT likes_count FROM community_posts WHERE id = ?').get(postId);
     res.json({ liked: false, likes_count: updated.likes_count });
   } else {
-    await req.db.prepare('INSERT INTO book_likes (post_id, user_id) VALUES (?, ?)').run(postId, req.user.id);
+    await req.db.prepare('INSERT INTO community_post_likes (post_id, user_id) VALUES (?, ?)').run(postId, req.user.id);
     await req.db.prepare('UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = ?').run(postId);
 
     if (post.user_id !== req.user.id) {
