@@ -160,15 +160,20 @@ router.get('/reading', auth, async (req, res) => {
 
 // GET /api/profile/posts-history — historique des posts utilisateur
 router.get('/posts-history', auth, async (req, res) => {
-  const posts = await req.db.prepare(`
-    SELECT p.*, COUNT(c.id) as comments_count
-    FROM posts p
-    LEFT JOIN comments c ON c.post_id = p.id
-    WHERE p.user_id = ?
-    GROUP BY p.id
-    ORDER BY p.created_at DESC
-  `).all(req.user.id);
-  res.json(posts);
+  try {
+    const posts = await req.db.prepare(`
+      SELECT p.*, COUNT(c.id) as comments_count
+      FROM community_posts p
+      LEFT JOIN community_comments c ON c.post_id = p.id
+      WHERE p.user_id = ?
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `).all(req.user.id);
+    res.json(posts);
+  } catch (error) {
+    console.error('Error fetching posts history:', error);
+    res.json([]); // Retourner un tableau vide en cas d'erreur
+  }
 });
 
 // PATCH /api/profile/me — mettre à jour le profil

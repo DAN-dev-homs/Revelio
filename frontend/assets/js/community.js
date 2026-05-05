@@ -390,13 +390,24 @@ const CommunityPage = (() => {
     const typeLabel = post.type === 'testimony'
       ? i18n.t('community.testimony')
       : i18n.t('community.thought');
+    
+    // Badge de l'auteur
+    const badgeIcon = post.author_badge ? {
+      bronze: '🥉',
+      silver: '🥈',
+      gold: '🥇',
+      diamond: '💎'
+    }[post.author_badge] : '';
 
     return `
       <article class="post-card tap-feedback" id="post-${post.id}" style="cursor:default;">
         <div class="post-header">
           <div class="post-avatar">${avatarHtml}</div>
           <div>
-            <div class="post-author-name">${post.author_name}</div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div class="post-author-name">${post.author_name}</div>
+              ${badgeIcon ? `<span style="font-size: 14px;" title="${post.author_badge} badge">${badgeIcon}</span>` : ''}
+            </div>
             <div class="post-meta">
               <span class="post-type-badge">${typeLabel}</span>
               <span class="post-time">${timeLabel}</span>
