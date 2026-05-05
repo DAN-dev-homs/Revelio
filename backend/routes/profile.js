@@ -8,43 +8,53 @@ const bcrypt = require('bcryptjs');
 // GET /api/profile/me — profil complet
 router.get('/me', auth, async (req, res) => {
   try {
+    console.log('👤 Début requête profil pour user:', req.user.id);
+    
     let user;
     try {
       user = await req.db.prepare(
         'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
       ).get(req.user.id);
+      console.log('📊 Utilisateur trouvé:', user);
     } catch (e) {
       // Si le champ badge n'existe pas, faire la requête sans lui
       user = await req.db.prepare(
         'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
       ).get(req.user.id);
       if (user) user.badge = 'bronze'; // Badge par défaut
+      console.log('⚠️ Utilisateur sans badge, badge par défaut ajouté');
     }
     
     if (!user) {
+      console.log('❌ Utilisateur non trouvé');
       return res.status(404).json({ error: 'User not found' });
     }
 
     let booksCompleted = 0;
     try {
-      booksCompleted = (await req.db.prepare(
+      const booksResult = await req.db.prepare(
         'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
-      ).get(req.user.id)).c;
+      ).get(req.user.id);
+      booksCompleted = booksResult.c;
+      console.log('📚 Livres complétés calculés:', booksCompleted);
     } catch (e) {
-      console.error('Error counting books completed:', e);
+      console.error('❌ Erreur comptage livres complétés:', e);
       booksCompleted = 0;
     }
 
-    res.json({ 
+    const profileData = { 
       ...user, 
       books_completed: booksCompleted,
       // Assurer que tous les champs nécessaires existent
       streak_days: user.streak_days || 0,
       total_hours: user.total_hours || 0,
       badge: user.badge || 'bronze'
-    });
+    };
+    
+    console.log('✅ Données profil finales:', profileData);
+    res.json(profileData);
   } catch (error) {
-    console.error('Profile route error:', error);
+    console.error('💥 Erreur route profil:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -161,6 +171,15 @@ router.get('/reading', auth, async (req, res) => {
 // GET /api/profile/posts-history — historique des posts utilisateur
 router.get('/posts-history', auth, async (req, res) => {
   try {
+    console.log('📝 Requête posts-history pour user:', req.user.id);
+    
+    // Vérifier d'abord si des posts existent
+    const allPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts').get();
+    console.log('📊 Total posts dans la table posts:', allPosts);
+    
+    const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(req.user.id);
+    console.log('👤 Posts pour cet utilisateur:', userPosts);
+    
     const posts = await req.db.prepare(`
       SELECT p.*, COUNT(c.id) as comments_count
       FROM posts p
@@ -169,9 +188,11 @@ router.get('/posts-history', auth, async (req, res) => {
       GROUP BY p.id
       ORDER BY p.created_at DESC
     `).all(req.user.id);
+    
+    console.log('✅ Posts trouvés:', posts.length);
     res.json(posts);
   } catch (error) {
-    console.error('Error fetching posts history:', error);
+    console.error('❌ Erreur posts history:', error);
     res.json([]); // Retourner un tableau vide en cas d'erreur
   }
 });
