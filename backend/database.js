@@ -82,8 +82,23 @@ async function ensureSchema(db) {
         total_hours REAL    DEFAULT 0,
         badge       TEXT    DEFAULT 'bronze',
         created_at  TEXT    DEFAULT (datetime('now'))
-      );
+      );`);
 
+    // Migration pour ajouter le champ badge s'il n'existe pas
+    try {
+      await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT DEFAULT 'bronze'`);
+    } catch (e) {
+      // Le champ existe déjà, ignorer l'erreur
+    }
+
+    // Migration pour ajouter le champ reading_time_min s'il n'existe pas
+    try {
+      await db.exec(`ALTER TABLE books ADD COLUMN reading_time_min INTEGER DEFAULT 5`);
+    } catch (e) {
+      // Le champ existe déjà, ignorer l'erreur
+    }
+
+    await db.exec(`
       CREATE TABLE IF NOT EXISTS books (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         title         TEXT    NOT NULL,
@@ -191,6 +206,20 @@ async function ensureSchema(db) {
       );
     `);
   } else {
+    // Migration pour ajouter le champ badge s'il n'existe pas (PostgreSQL)
+    try {
+      await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT DEFAULT 'bronze'`);
+    } catch (e) {
+      // Le champ existe déjà, ignorer l'erreur
+    }
+
+    // Migration pour ajouter le champ reading_time_min s'il n'existe pas (PostgreSQL)
+    try {
+      await db.exec(`ALTER TABLE books ADD COLUMN reading_time_min INTEGER DEFAULT 5`);
+    } catch (e) {
+      // Le champ existe déjà, ignorer l'erreur
+    }
+
     await db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id          SERIAL PRIMARY KEY,
