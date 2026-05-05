@@ -25,17 +25,29 @@ const CommunityPage = (() => {
           data-i18n="community.tab_today">${i18n.t('community.tab_today')}</button>
         <button class="tab-item ${activeTab === 'community' ? 'active' : ''}" id="tab-community"
           data-i18n="community.tab_community">${i18n.t('community.tab_community')}</button>
-        <button class="tab-item ${activeTab === 'users' ? 'active' : ''}" id="tab-users">
-          👥 Utilisateurs
-        </button>
       </div>
 
-      ${activeTab === 'users' ? buildUsersTab() : buildCommunityTab()}
+      ${buildCommunityTab()}
     `;
   }
 
   function buildCommunityTab() {
     return `
+      <!-- Barre de recherche d'utilisateurs -->
+      <div class="search-container" style="margin-bottom: var(--spacing-lg);">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="user-search-input" class="search-input" placeholder="Rechercher un utilisateur..." autocomplete="off">
+          <button id="clear-search-btn" class="clear-search-btn" style="display: none;">✕</button>
+        </div>
+      </div>
+
+      <!-- Résultats de recherche d'utilisateurs -->
+      <div id="users-search-results" class="flex flex-col gap-md" style="margin-bottom: var(--spacing-lg);"></div>
+
       <!-- Bouton partage -->
       <div class="add-post-bar tap-feedback" id="open-post-modal">
         <div class="add-btn">
@@ -53,46 +65,19 @@ const CommunityPage = (() => {
     `;
   }
 
-  function buildUsersTab() {
-    return `
-      <!-- Barre de recherche d'utilisateurs -->
-      <div class="search-container" style="margin-bottom: var(--spacing-xl);">
-        <div class="search-input-wrapper">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" id="user-search-input" class="search-input" placeholder="Rechercher un utilisateur..." autocomplete="off">
-          <button id="clear-search-btn" class="clear-search-btn" style="display: none;">✕</button>
-        </div>
-      </div>
-
-      <!-- Résultats de recherche -->
-      <div id="users-search-results" class="flex flex-col gap-md"></div>
-      
-      <!-- Message initial -->
-      <div id="users-initial-message" class="empty-state">
-        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
-        <h3 style="margin-bottom: 8px;">Rechercher des utilisateurs</h3>
-        <p style="color: var(--text-secondary);">Entrez un nom ou email pour trouver des membres de la communauté</p>
-      </div>
-    `;
-  }
-
-  function renderUsersTab(container) {
-    console.log('🎯 Initialisation onglet utilisateurs');
+  function initializeUserSearch(container) {
+    console.log('🎯 Initialisation recherche utilisateurs');
     
     const searchInput = container.querySelector('#user-search-input');
     const clearBtn = container.querySelector('#clear-search-btn');
     const resultsContainer = container.querySelector('#users-search-results');
-    const initialMessage = container.querySelector('#users-initial-message');
     
-    if (!searchInput || !clearBtn || !resultsContainer || !initialMessage) {
-      console.error('❌ Éléments manquants dans l\'onglet utilisateurs');
+    if (!searchInput || !clearBtn || !resultsContainer) {
+      console.error('❌ Éléments de recherche manquants');
       return;
     }
     
-    console.log('✅ Éléments trouvés, ajout des écouteurs');
+    console.log('✅ Éléments de recherche trouvés');
     
     // Gérer la recherche
     let searchTimeout;
@@ -102,9 +87,6 @@ const CommunityPage = (() => {
       
       // Afficher/masquer le bouton clear
       clearBtn.style.display = query ? 'block' : 'none';
-      
-      // Afficher/masquer le message initial
-      initialMessage.style.display = query ? 'none' : 'block';
       
       // Effacer les résultats précédents
       resultsContainer.innerHTML = '';
@@ -126,12 +108,8 @@ const CommunityPage = (() => {
       searchInput.value = '';
       clearBtn.style.display = 'none';
       resultsContainer.innerHTML = '';
-      initialMessage.style.display = 'block';
       searchInput.focus();
     });
-    
-    // Focus automatique sur le champ de recherche
-    setTimeout(() => searchInput.focus(), 100);
   }
 
   async function searchUsers(query, resultsContainer) {
@@ -263,10 +241,8 @@ const CommunityPage = (() => {
   }
 
   function renderFeed(container) {
-    if (activeTab === 'users') {
-      renderUsersTab(container);
-      return;
-    }
+    // Initialiser la recherche d'utilisateurs (toujours disponible)
+    initializeUserSearch(container);
 
     const feed = container.querySelector('#community-feed');
     if (!feed) return;
@@ -466,19 +442,8 @@ const CommunityPage = (() => {
       container.querySelector('#tab-community').classList.add('active');
       renderFeed(container);
     });
-    
-    // Nouvel onglet utilisateurs
-    const usersTab = container.querySelector('#tab-users');
-    if (usersTab) {
-      usersTab.addEventListener('click', () => {
-        activeTab = 'users';
-        container.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-        usersTab.classList.add('active');
-        renderFeed(container);
-      });
-    }
 
-    // Ouvrir modal post (uniquement pour l'onglet communauté)
+    // Ouvrir modal post
     const openPostBtn = container.querySelector('#open-post-modal');
     if (openPostBtn) {
       openPostBtn.addEventListener('click', () => App.openPostModal());

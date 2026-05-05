@@ -7,25 +7,46 @@ const bcrypt = require('bcryptjs');
 
 // GET /api/profile/me — profil complet
 router.get('/me', auth, async (req, res) => {
-  let user;
   try {
-    user = await req.db.prepare(
-      'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
-    ).get(req.user.id);
-  } catch (e) {
-    // Si le champ badge n'existe pas, faire la requête sans lui
-    user = await req.db.prepare(
-      'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
-    ).get(req.user.id);
-    if (user) user.badge = 'bronze'; // Badge par défaut
+    let user;
+    try {
+      user = await req.db.prepare(
+        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
+      ).get(req.user.id);
+    } catch (e) {
+      // Si le champ badge n'existe pas, faire la requête sans lui
+      user = await req.db.prepare(
+        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
+      ).get(req.user.id);
+      if (user) user.badge = 'bronze'; // Badge par défaut
+    }
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let booksCompleted = 0;
+    try {
+      booksCompleted = (await req.db.prepare(
+        'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+      ).get(req.user.id)).c;
+    } catch (e) {
+      console.error('Error counting books completed:', e);
+      booksCompleted = 0;
+    }
+
+    res.json({ 
+      ...user, 
+      books_completed: booksCompleted,
+      // Assurer que tous les champs nécessaires existent
+      streak_days: user.streak_days || 0,
+      total_hours: user.total_hours || 0,
+      badge: user.badge || 'bronze'
+    });
+  } catch (error) {
+    console.error('Profile route error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const booksCompleted = (await req.db.prepare(
-    'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
-  ).get(req.user.id)).c;
-
-  res.json({ ...user, books_completed: booksCompleted });
 });
 
 // GET /api/profile/search?q=query — rechercher des utilisateurs

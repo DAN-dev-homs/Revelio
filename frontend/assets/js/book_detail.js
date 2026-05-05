@@ -303,12 +303,12 @@ const BookDetailPage = (() => {
       });
     }
 
-    // Suivi de la progression basé sur le temps de lecture du résumé texte
+    // Suivi de la progression basé sur le scroll du résumé
     const summarySection = container.querySelector('#section-summary');
     if (summarySection) {
-      let readingStartTime = null;
-      let readingProgressInterval = null;
+      let scrollProgressInterval = null;
       let hasMarkedComplete = false;
+      let lastProgressUpdate = 0;
       
       // Ajouter un indicateur de progression visible
       const progressIndicator = document.createElement('div');
@@ -328,86 +328,89 @@ const BookDetailPage = (() => {
         margin-left: auto;
         margin-right: auto;
       `;
-      progressIndicator.textContent = '📖 Lecture en cours... 0%';
+      progressIndicator.textContent = '📖 Commencez à lire... 0%';
       summarySection.insertBefore(progressIndicator, summarySection.firstChild);
       
-      const startReadingTracking = () => {
-        if (!readingStartTime) {
-          readingStartTime = Date.now();
-          console.log('📖 Début du suivi de lecture pour:', b.title);
-          
-          readingProgressInterval = setInterval(() => {
-            if (readingStartTime) {
-              const elapsedSeconds = (Date.now() - readingStartTime) / 1000;
-              
-              // Utiliser reading_time_min du livre (5 minutes par défaut)
-              const readingTimeMinutes = b.reading_time_min || 5;
-              const totalReadingSeconds = readingTimeMinutes * 60;
-              
-              const progress = Math.min(100, Math.round((elapsedSeconds / totalReadingSeconds) * 100));
-              
-              progressIndicator.textContent = `📖 Lecture en cours... ${progress}%`;
-              progressIndicator.style.background = progress >= 100 ? 'var(--success)' : 'var(--primary)';
-              
-              // Mettre à jour la progression toutes les 10 secondes
-              if (elapsedSeconds % 10 < 1) {
-                console.log(`📊 Progression: ${progress}% - Temps écoulé: ${Math.round(elapsedSeconds)}s`);
-                api.updateProgress(b.id, progress).then(() => {
-                  console.log('✅ Progression mise à jour:', progress + '%');
-                }).catch(e => {
-                  console.error('❌ Erreur mise à jour progression:', e);
-                });
-              }
-              
-              // Marquer comme complété et arrêter
-              if (progress >= 100 && !hasMarkedComplete) {
-                hasMarkedComplete = true;
-                clearInterval(readingProgressInterval);
-                progressIndicator.textContent = '✅ Lecture terminée ! 100%';
-                progressIndicator.style.background = 'var(--success)';
-                console.log('🎉 Lecture terminée pour:', b.title);
-                
-                // Mettre à jour une dernière fois à 100%
-                api.updateProgress(b.id, 100).catch(e => console.error(e));
-              }
-            }
-          }, 1000);
-        }
+      const calculateScrollProgress = () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const sectionTop = summarySection.offsetTop;
+        const sectionHeight = summarySection.offsetHeight;
+        const windowHeight = window.innerHeight;
+        
+        // Calculer la progression basée sur le scroll
+        const scrolled = scrollTop - sectionTop + windowHeight;
+        const progress = Math.min(100, Math.max(0, Math.round((scrolled / (sectionHeight + windowHeight)) * 100)));
+        
+        return progress;
       };
       
-      const pauseReadingTracking = () => {
-        if (readingStartTime) {
-          const elapsedSeconds = (Date.now() - readingStartTime) / 1000;
-          console.log(`⏸️ Pause lecture - Temps écoulé: ${Math.round(elapsedSeconds)}s`);
-          readingStartTime = null;
-          if (readingProgressInterval) {
-            clearInterval(readingProgressInterval);
-            readingProgressInterval = null;
+      const updateScrollProgress = () => {
+        const progress = calculateScrollProgress();
+        
+        // Mettre à jour l'indicateur visuel
+        progressIndicator.textContent = `📖 Lecture en cours... ${progress}%`;
+        progressIndicator.style.background = progress >= 100 ? 'var(--success)' : 'var(--primary)';
+        
+        // Mettre à jour la progression toutes les 5% de changement
+        if (progress - lastProgressUpdate >= 5 || progress === 100) {
+          lastProgressUpdate = progress;
+          
+          console.log(`📊 Progression scroll: ${progress}%`);
+          
+          api.updateProgress(b.id, progress).then(() => {
+            console.log('✅ Progression mise à jour:', progress + '%');
+          }).catch(e => {
+            console.error('❌ Erreur mise à jour progression:', e);
+          });
+          
+          // Marquer comme complété et arrêter
+          if (progress >= 100 && !hasMarkedComplete) {
+            hasMarkedComplete = true;
+            clearInterval(scrollProgressInterval);
+            progressIndicator.textContent = '✅ Lecture terminée ! 100%';
+            progressIndicator.style.background = 'var(--success)';
+            console.log('🎉 Lecture terminée pour:', b.title);
+            
+            // Mettre à jour une dernière fois à 100%
+            api.updateProgress(b.id, 100).catch(e => console.error(e));
           }
         }
       };
       
-      // Démarrer le tracking quand la page est visible
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-          startReadingTracking();
-        } else {
-          pauseReadingTracking();
+      // Démarrer le tracking de scroll
+      const startScrollTracking = () => {
+        if (!scrollProgressInterval) {
+          scrollProgressInterval = setInterval(updateScrollProgress, 200); // Vérifier toutes les 200ms
+          console.log('📖 Début du suivi de scroll pour:', b.title);
         }
       };
       
-      // Démarrer immédiatement si la page est visible
-      if (document.visibilityState === 'visible') {
-        setTimeout(startReadingTracking, 1000); // Démarrer après 1 seconde
-      }
+      // Observer quand l'utilisateur entre dans la section du résumé
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            startScrollTracking();
+          } else {
+            // Pause quand on sort de la section
+            if (scrollProgressInterval) {
+              clearInterval(scrollProgressInterval);
+              scrollProgressInterval = null;
+              console.log('⏸️ Pause suivi de scroll');
+            }
+          }
+        });
+      }, { threshold: 0.1 }); // 10% de la section visible
       
-      document.addEventListener('visibilitychange', handleVisibilityChange);
+      observer.observe(summarySection);
       
       // Nettoyer quand on quitte la page
       const cleanup = () => {
-        pauseReadingTracking();
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        console.log('🧹 Nettoyage du suivi de lecture');
+        if (scrollProgressInterval) {
+          clearInterval(scrollProgressInterval);
+          scrollProgressInterval = null;
+        }
+        observer.disconnect();
+        console.log('🧹 Nettoyage du suivi de scroll');
       };
       
       window.addEventListener('beforeunload', cleanup);
