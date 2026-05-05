@@ -303,117 +303,146 @@ const BookDetailPage = (() => {
       });
     }
 
-    // Suivi de la progression basé sur le scroll du résumé
+    // Suivi de la progression basé sur un timer de 2 minutes
     const summarySection = container.querySelector('#section-summary');
     if (summarySection) {
-      let scrollProgressInterval = null;
-      let hasMarkedComplete = false;
-      let lastProgressUpdate = 0;
+      let timerInterval = null;
+      let startTime = null;
+      let timeRemaining = 120; // 2 minutes en secondes
+      let isActive = false;
       
-      // Ajouter un indicateur de progression visible
-      const progressIndicator = document.createElement('div');
-      progressIndicator.style.cssText = `
+      // Ajouter un indicateur de timer visible
+      const timerIndicator = document.createElement('div');
+      timerIndicator.style.cssText = `
         position: sticky;
         top: 10px;
         background: var(--primary);
         color: white;
-        padding: 8px 12px;
+        padding: 12px 16px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 600;
         margin-bottom: 16px;
         z-index: 10;
         text-align: center;
-        max-width: 200px;
+        max-width: 250px;
         margin-left: auto;
         margin-right: auto;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       `;
-      progressIndicator.textContent = '📖 Commencez à lire... 0%';
-      summarySection.insertBefore(progressIndicator, summarySection.firstChild);
+      timerIndicator.innerHTML = `
+        <div style="margin-bottom: 4px;">⏱️ Temps de lecture</div>
+        <div style="font-size: 18px;">2:00</div>
+        <button id="start-timer-btn" style="
+          margin-top: 8px;
+          padding: 6px 12px;
+          background: white;
+          color: var(--primary);
+          border: none;
+          border-radius: 12px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+        ">Commencer la lecture</button>
+      `;
+      summarySection.insertBefore(timerIndicator, summarySection.firstChild);
       
-      const calculateScrollProgress = () => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const sectionTop = summarySection.offsetTop;
-        const sectionHeight = summarySection.offsetHeight;
-        const windowHeight = window.innerHeight;
-        
-        // Calculer la progression basée sur le scroll
-        const scrolled = scrollTop - sectionTop + windowHeight;
-        const progress = Math.min(100, Math.max(0, Math.round((scrolled / (sectionHeight + windowHeight)) * 100)));
-        
-        return progress;
+      const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
       };
       
-      const updateScrollProgress = () => {
-        const progress = calculateScrollProgress();
+      const updateTimerDisplay = () => {
+        const timeDisplay = timerIndicator.querySelector('div:nth-child(2)');
+        const startBtn = timerIndicator.querySelector('#start-timer-btn');
         
-        // Mettre à jour l'indicateur visuel
-        progressIndicator.textContent = `📖 Lecture en cours... ${progress}%`;
-        progressIndicator.style.background = progress >= 100 ? 'var(--success)' : 'var(--primary)';
-        
-        // Mettre à jour la progression toutes les 5% de changement
-        if (progress - lastProgressUpdate >= 5 || progress === 100) {
-          lastProgressUpdate = progress;
+        if (isActive) {
+          timeDisplay.textContent = formatTime(timeRemaining);
+          startBtn.textContent = 'Pause';
+          startBtn.style.background = '#ff6b6b';
+          startBtn.style.color = 'white';
+        } else if (timeRemaining === 120) {
+          timeDisplay.textContent = formatTime(timeRemaining);
+          startBtn.textContent = 'Commencer la lecture';
+          startBtn.style.background = 'white';
+          startBtn.style.color = 'var(--primary)';
+        } else {
+          timeDisplay.textContent = formatTime(timeRemaining);
+          startBtn.textContent = 'Reprendre';
+          startBtn.style.background = 'white';
+          startBtn.style.color = 'var(--primary)';
+        }
+      };
+      
+      const startTimer = () => {
+        if (!isActive) {
+          isActive = true;
+          startTime = Date.now() - (120 - timeRemaining) * 1000;
           
-          console.log(`📊 Progression scroll: ${progress}%`);
-          
-          api.updateProgress(b.id, progress).then(() => {
-            console.log('✅ Progression mise à jour:', progress + '%');
-          }).catch(e => {
-            console.error('❌ Erreur mise à jour progression:', e);
-          });
-          
-          // Marquer comme complété et arrêter
-          if (progress >= 100 && !hasMarkedComplete) {
-            hasMarkedComplete = true;
-            clearInterval(scrollProgressInterval);
-            progressIndicator.textContent = '✅ Lecture terminée ! 100%';
-            progressIndicator.style.background = 'var(--success)';
-            console.log('🎉 Lecture terminée pour:', b.title);
+          timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            timeRemaining = Math.max(0, 120 - elapsed);
             
-            // Mettre à jour une dernière fois à 100%
-            api.updateProgress(b.id, 100).catch(e => console.error(e));
-          }
+            // Calculer la progression
+            const progress = Math.round(((120 - timeRemaining) / 120) * 100);
+            
+            // Mettre à jour l'affichage
+            updateTimerDisplay();
+            
+            // Envoyer la progression au backend
+            api.updateProgress(b.id, progress).catch(e => console.error('Erreur updateProgress:', e));
+            
+            // Marquer comme complété à 100%
+            if (timeRemaining === 0) {
+              clearInterval(timerInterval);
+              isActive = false;
+              timerIndicator.innerHTML = `
+                <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                <div style="font-size: 18px; color: #4CAF50;">100%</div>
+                <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+              `;
+            }
+          }, 1000);
         }
       };
       
-      // Démarrer le tracking de scroll
-      const startScrollTracking = () => {
-        if (!scrollProgressInterval) {
-          scrollProgressInterval = setInterval(updateScrollProgress, 200); // Vérifier toutes les 200ms
-          console.log('📖 Début du suivi de scroll pour:', b.title);
+      const pauseTimer = () => {
+        if (isActive) {
+          clearInterval(timerInterval);
+          isActive = false;
+          updateTimerDisplay();
         }
       };
       
-      // Observer quand l'utilisateur entre dans la section du résumé
+      // Gérer le bouton start/pause
+      const startBtn = timerIndicator.querySelector('#start-timer-btn');
+      startBtn.addEventListener('click', () => {
+        if (isActive) {
+          pauseTimer();
+        } else {
+          startTimer();
+        }
+      });
+      
+      // Nettoyage quand on quitte la page
+      const cleanup = () => {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+      };
+      
+      // Observer pour détecter quand la section est visible
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            startScrollTracking();
-          } else {
-            // Pause quand on sort de la section
-            if (scrollProgressInterval) {
-              clearInterval(scrollProgressInterval);
-              scrollProgressInterval = null;
-              console.log('⏸️ Pause suivi de scroll');
-            }
+          if (entry.isIntersecting && !isActive && timeRemaining === 120) {
+            // Démarrer automatiquement quand la section devient visible
+            startTimer();
           }
         });
-      }, { threshold: 0.1 }); // 10% de la section visible
+      }, { threshold: 0.5 });
       
       observer.observe(summarySection);
-      
-      // Nettoyer quand on quitte la page
-      const cleanup = () => {
-        if (scrollProgressInterval) {
-          clearInterval(scrollProgressInterval);
-          scrollProgressInterval = null;
-        }
-        observer.disconnect();
-        console.log('🧹 Nettoyage du suivi de scroll');
-      };
-      
-      window.addEventListener('beforeunload', cleanup);
     }
   }
 
