@@ -98,10 +98,12 @@ router.post('/:id/like', auth, async (req, res) => {
 
   if (existing) {
     await req.db.prepare('DELETE FROM book_likes WHERE user_id = ? AND book_id = ?').run(req.user.id, id);
-    res.json({ liked: false });
+    const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(id)).count;
+    res.json({ liked: false, likes_count: likesCount });
   } else {
     await req.db.prepare('INSERT INTO book_likes (user_id, book_id) VALUES (?, ?)').run(req.user.id, id);
-    res.json({ liked: true });
+    const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(id)).count;
+    res.json({ liked: true, likes_count: likesCount });
   }
 });
 

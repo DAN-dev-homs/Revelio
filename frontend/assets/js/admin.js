@@ -340,15 +340,83 @@ async function loadUsers() {
         <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
         <td style="font-size:12px;color:var(--muted);">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
         <td>
+          <span class="badge badge-${u.badge || 'bronze'}" style="
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 8px;
+            ${(u.badge || 'bronze') === 'bronze' ? 'background: #CD7F32; color: white;' : ''}
+            ${(u.badge || 'bronze') === 'silver' ? 'background: #C0C0C0; color: white;' : ''}
+            ${(u.badge || 'bronze') === 'gold' ? 'background: #FFD700; color: #333;' : ''}
+            ${(u.badge || 'bronze') === 'diamond' ? 'background: #00CED1; color: white;' : ''}
+          ">${u.badge || 'bronze'}</span>
+        </td>
+        <td>
           <div class="actions">
             <button class="btn btn-ghost btn-sm" onclick="openEditUser(${u.id}, '${u.name.replace(/'/g,"\\'")}', '${u.email}', '${u.role}')">✏️</button>
+            <button class="btn btn-purple btn-sm" onclick="openBadgeModal(${u.id}, '${u.name.replace(/'/g,"\\'")}', '${u.badge || 'bronze'}')">🏆 Badge</button>
             <button class="btn btn-blue btn-sm" onclick="openResetPwd(${u.id}, '${u.email}')">🔑 MDP</button>
             ${u.id !== adminUser.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id}, '${u.name.replace(/'/g,"\\'")}')">✕</button>` : ''}
           </div>
         </td>
       </tr>`).join('');
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" class="alert alert-error">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="alert alert-error">${e.message}</td></tr>`;
+  }
+}
+
+// ── BADGE MODAL ───────────────────────────────────────────────
+function openBadgeModal(userId, userName, currentBadge) {
+  document.getElementById('badge-user-id').value = userId;
+  document.getElementById('badge-user-name').textContent = userName;
+  document.getElementById('current-badge').textContent = currentBadge;
+  
+  // Set radio button for current badge
+  document.querySelectorAll('input[name="badge"]').forEach(radio => {
+    radio.checked = radio.value === currentBadge;
+  });
+  
+  document.getElementById('modal-badge').classList.add('active');
+  document.getElementById('badge-form-alert').innerHTML = '';
+}
+
+async function grantBadge() {
+  const userId = document.getElementById('badge-user-id').value;
+  const badge = document.querySelector('input[name="badge"]:checked')?.value;
+  const alertEl = document.getElementById('badge-form-alert');
+  const btn = document.getElementById('grant-badge-btn');
+  
+  if (!badge) {
+    alertEl.innerHTML = '<div class="alert alert-error">Veuillez sélectionner un badge</div>';
+    return;
+  }
+  
+  btn.textContent = '...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch(`${API}/admin/users/${userId}/badge`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ badge })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    
+    closeModal('modal-badge');
+    loadUsers(); // Reload users to show updated badge
+  } catch (e) {
+    alertEl.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  } finally {
+    btn.textContent = 'Accorder le badge';
+    btn.disabled = false;
   }
 }
 

@@ -213,8 +213,8 @@
       <div class="card">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Inscription</th><th>Actions</th></tr></thead>
-            <tbody id="users-table-body"><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+            <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Inscription</th><th>Badge</th><th>Actions</th></tr></thead>
+            <tbody id="users-table-body"><tr><td colspan="6"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -311,6 +311,77 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-edit-user')">Annuler</button>
       <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-badge">
+  <div class="modal">
+    <div class="modal-body">
+      <h3 class="modal-title">🏆 Accorder un badge</h3>
+      <input type="hidden" id="badge-user-id">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">
+        Utilisateur: <strong id="badge-user-name"></strong><br>
+        Badge actuel: <span id="current-badge" style="font-weight:bold;"></span>
+      </p>
+      <div id="badge-form-alert"></div>
+      <div class="form-group">
+        <label>Sélectionner un nouveau badge:</label>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="radio" name="badge" value="bronze" style="margin:0;">
+            <span style="
+              display:inline-block;
+              padding:4px 12px;
+              border-radius:12px;
+              font-size:12px;
+              font-weight:600;
+              background:linear-gradient(135deg, #CD7F32, #B8860B);
+              color:white;
+            ">🥉 Bronze</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="radio" name="badge" value="silver" style="margin:0;">
+            <span style="
+              display:inline-block;
+              padding:4px 12px;
+              border-radius:12px;
+              font-size:12px;
+              font-weight:600;
+              background:linear-gradient(135deg, #C0C0C0, #808080);
+              color:white;
+            ">🥈 Silver</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="radio" name="badge" value="gold" style="margin:0;">
+            <span style="
+              display:inline-block;
+              padding:4px 12px;
+              border-radius:12px;
+              font-size:12px;
+              font-weight:600;
+              background:linear-gradient(135deg, #FFD700, #FFA500);
+              color:#333;
+            ">🥇 Gold</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="radio" name="badge" value="diamond" style="margin:0;">
+            <span style="
+              display:inline-block;
+              padding:4px 12px;
+              border-radius:12px;
+              font-size:12px;
+              font-weight:600;
+              background:linear-gradient(135deg, #B9F2FF, #00CED1);
+              color:white;
+            ">💎 Diamond</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-badge')">Annuler</button>
+      <button class="btn btn-primary" id="grant-badge-btn" onclick="grantBadge()">Accorder le badge</button>
     </div>
   </div>
 </div>

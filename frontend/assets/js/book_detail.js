@@ -177,19 +177,40 @@ const BookDetailPage = (() => {
     // Like
     const likeBtn = container.querySelector('#book-like-btn');
     likeBtn.addEventListener('click', async () => {
+      if (likeBtn.disabled) return; // Prevent multiple clicks
+      
+      likeBtn.disabled = true;
+      const originalLiked = b.is_liked;
+      const originalCount = b.likes_count;
+      
+      // Optimistic update
+      b.is_liked = !originalLiked;
+      b.likes_count = originalLiked ? Math.max(0, originalCount - 1) : originalCount + 1;
+      likeBtn.classList.toggle('liked-active', b.is_liked);
+      likeBtn.querySelector('span').textContent = `${b.likes_count} Likes`;
+      const svg = likeBtn.querySelector('svg');
+      svg.setAttribute('fill', b.is_liked ? 'currentColor' : 'none');
+      svg.style.animation = 'heartPulse 0.5s ease';
+      
       try {
         const res = await api.toggleBookLike(b.id);
+        // Use server response for accurate count
         b.is_liked = res.liked;
-        b.likes_count = (b.likes_count || 0) + (res.liked ? 1 : -1);
-        
+        b.likes_count = res.likes_count || b.likes_count;
         likeBtn.classList.toggle('liked-active', res.liked);
         likeBtn.querySelector('span').textContent = `${b.likes_count} Likes`;
-        const svg = likeBtn.querySelector('svg');
         svg.setAttribute('fill', res.liked ? 'currentColor' : 'none');
-        svg.style.animation = 'heartPulse 0.5s ease';
-        setTimeout(() => svg.style.animation = '', 500);
       } catch (e) {
-        console.error(e);
+        // Revert on error
+        b.is_liked = originalLiked;
+        b.likes_count = originalCount;
+        likeBtn.classList.toggle('liked-active', originalLiked);
+        likeBtn.querySelector('span').textContent = `${b.likes_count} Likes`;
+        svg.setAttribute('fill', originalLiked ? 'currentColor' : 'none');
+        console.error('Like error:', e);
+      } finally {
+        likeBtn.disabled = false;
+        setTimeout(() => svg.style.animation = '', 500);
       }
     });
 
@@ -280,6 +301,77 @@ const BookDetailPage = (() => {
           api.updateProgress(b.id, pct).catch(e => console.error(e));
         }
       });
+    }
+
+    // Suivi de la progression basé sur le temps de lecture du résumé texte
+    const summarySection = container.querySelector('#section-summary');
+    if (summarySection) {
+      let readingStartTime = null;
+      let totalReadingTime = 0;
+      let readingProgressInterval = null;
+      
+      const startReadingTracking = () => {
+        if (!readingStartTime) {
+          readingStartTime = Date.now();
+          readingProgressInterval = setInterval(() => {
+            if (readingStartTime) {
+              totalReadingTime = (Date.now() - readingStartTime) / 1000; // en secondes
+              
+              // Estimer la progression basée sur le temps de lecture (200 mots/min = 3.3 mots/sec)
+              const estimatedWordsPerMinute = 200;
+              const wordsPerSecond = estimatedWordsPerMinute / 60;
+              const estimatedTotalWords = (b.summary || '').split(' ').length;
+              const estimatedReadingTimeMinutes = estimatedTotalWords / estimatedWordsPerMinute;
+              const estimatedReadingTimeSeconds = estimatedReadingTimeMinutes * 60;
+              
+              const progress = Math.min(100, Math.round((totalReadingTime / estimatedReadingTimeSeconds) * 100));
+              
+              // Mettre à jour la progression tous les 5 secondes
+              if (totalReadingTime % 5 < 1) {
+                api.updateProgress(b.id, progress).catch(e => console.error(e));
+              }
+              
+              // Marquer comme complété si 100%
+              if (progress >= 100) {
+                clearInterval(readingProgressInterval);
+                api.updateProgress(b.id, 100).catch(e => console.error(e));
+              }
+            }
+          }, 1000);
+        }
+      };
+      
+      const pauseReadingTracking = () => {
+        if (readingStartTime) {
+          readingStartTime = null;
+          if (readingProgressInterval) {
+            clearInterval(readingProgressInterval);
+            readingProgressInterval = null;
+          }
+        }
+      };
+      
+      // Observer quand l'utilisateur scroll dans la section du résumé
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            startReadingTracking();
+          } else {
+            pauseReadingTracking();
+          }
+        });
+      }, { threshold: 0.5 }); // 50% de la section visible
+      
+      observer.observe(summarySection);
+      
+      // Nettoyer quand on quitte la page
+      const cleanup = () => {
+        pauseReadingTracking();
+        observer.disconnect();
+      };
+      
+      // Ajouter un écouteur pour le nettoyage
+      window.addEventListener('beforeunload', cleanup);
     }
   }
 
