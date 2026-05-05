@@ -469,7 +469,7 @@ async function seedData(db) {
   const fiveHoursAgo = new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString();
 
   await db.prepare('INSERT INTO posts (user_id, type, content, likes_count, created_at) VALUES (?, ?, ?, ?, ?)')
-    .run(userId, 'testimony', "After 2 years of struggling with anxiety, I finally found peace through daily prayer and meditation on God's word.", 24, threeHoursAgo);
+    .run(adminId, 'testimony', "After 2 years of struggling with anxiety, I finally found peace through daily prayer and meditation on God's word.", 24, threeHoursAgo);
   await db.prepare('INSERT INTO posts (user_id, type, content, likes_count, created_at) VALUES (?, ?, ?, ?, ?)')
     .run(adminId, 'thought', "Reading 'The Purpose Driven Life' changed my perspective on why I exist. Every page feels like a letter written just for me.", 17, fiveHoursAgo);
 
