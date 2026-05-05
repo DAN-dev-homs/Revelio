@@ -233,15 +233,31 @@ async function ensureSchema(db) {
   } else {
     // Migration pour ajouter le champ badge s'il n'existe pas (PostgreSQL)
     try {
+      console.log('🔄 Migration PostgreSQL: ajout du champ badge...');
       await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT DEFAULT 'bronze'`);
+      console.log('✅ Champ badge ajouté avec succès');
     } catch (e) {
+      console.log('ℹ️ Champ badge déjà existant ou erreur:', e.message);
       // Le champ existe déjà, ignorer l'erreur
     }
 
     // Migration pour ajouter le champ reading_time_min s'il n'existe pas (PostgreSQL)
     try {
+      console.log('🔄 Migration PostgreSQL: ajout du champ reading_time_min...');
       await db.exec(`ALTER TABLE books ADD COLUMN reading_time_min INTEGER DEFAULT 5`);
+      console.log('✅ Champ reading_time_min ajouté avec succès');
     } catch (e) {
+      console.log('ℹ️ Champ reading_time_min déjà existant ou erreur:', e.message);
+      // Le champ existe déjà, ignorer l'erreur
+    }
+
+    // Migration pour ajouter le champ image_url s'il n'existe pas (PostgreSQL)
+    try {
+      console.log('🔄 Migration PostgreSQL: ajout du champ image_url...');
+      await db.exec(`ALTER TABLE posts ADD COLUMN image_url TEXT`);
+      console.log('✅ Champ image_url ajouté avec succès');
+    } catch (e) {
+      console.log('ℹ️ Champ image_url déjà existant ou erreur:', e.message);
       // Le champ existe déjà, ignorer l'erreur
     }
 

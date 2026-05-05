@@ -12,17 +12,35 @@ router.get('/me', auth, async (req, res) => {
     
     let user;
     try {
+      console.log('🔍 Requête utilisateur avec badge...');
       user = await req.db.prepare(
         'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
       ).get(req.user.id);
       console.log('📊 Utilisateur trouvé:', user);
     } catch (e) {
+      console.log('❌ Erreur requête avec badge:', e.message);
+      console.log('🔄 Tentative requête sans badge...');
       // Si le champ badge n'existe pas, faire la requête sans lui
-      user = await req.db.prepare(
-        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
-      ).get(req.user.id);
-      if (user) user.badge = 'bronze'; // Badge par défaut
-      console.log('⚠️ Utilisateur sans badge, badge par défaut ajouté');
+      try {
+        user = await req.db.prepare(
+          'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
+        ).get(req.user.id);
+        if (user) user.badge = 'bronze'; // Badge par défaut
+        console.log('⚠️ Utilisateur sans badge, badge par défaut ajouté');
+      } catch (e2) {
+        console.log('❌ Erreur requête sans badge:', e2.message);
+        // Essayer avec les champs minimums
+        user = await req.db.prepare(
+          'SELECT id, name, email, created_at FROM users WHERE id = ?'
+        ).get(req.user.id);
+        if (user) {
+          user.streak_days = 0;
+          user.total_hours = 0;
+          user.avatar_url = null;
+          user.badge = 'bronze';
+        }
+        console.log('🔄 Utilisateur avec champs minimums:', user);
+      }
     }
     
     if (!user) {
@@ -174,25 +192,55 @@ router.get('/posts-history', auth, async (req, res) => {
     console.log('📝 Requête posts-history pour user:', req.user.id);
     
     // Vérifier d'abord si des posts existent
-    const allPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts').get();
-    console.log('📊 Total posts dans la table posts:', allPosts);
+    try {
+      const allPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts').get();
+      console.log('📊 Total posts dans la table posts:', allPosts);
+    } catch (e) {
+      console.error('❌ Erreur COUNT posts:', e.message);
+      res.json([]);
+      return;
+    }
     
-    const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(req.user.id);
-    console.log('👤 Posts pour cet utilisateur:', userPosts);
+    try {
+      const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(req.user.id);
+      console.log('👤 Posts pour cet utilisateur:', userPosts);
+    } catch (e) {
+      console.error('❌ Erreur COUNT user posts:', e.message);
+      res.json([]);
+      return;
+    }
     
-    const posts = await req.db.prepare(`
-      SELECT p.*, COUNT(c.id) as comments_count
-      FROM posts p
-      LEFT JOIN comments c ON c.post_id = p.id
-      WHERE p.user_id = ?
-      GROUP BY p.id
-      ORDER BY p.created_at DESC
-    `).all(req.user.id);
-    
-    console.log('✅ Posts trouvés:', posts.length);
-    res.json(posts);
+    try {
+      console.log('🔍 Requête posts avec comments...');
+      const posts = await req.db.prepare(`
+        SELECT p.*, COUNT(c.id) as comments_count
+        FROM posts p
+        LEFT JOIN comments c ON c.post_id = p.id
+        WHERE p.user_id = ?
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+      `).all(req.user.id);
+      
+      console.log('✅ Posts trouvés:', posts.length);
+      res.json(posts);
+    } catch (e) {
+      console.error('❌ Erreur requête posts avec comments:', e.message);
+      // Essayer sans les commentaires
+      try {
+        console.log('🔄 Tentative requête posts sans comments...');
+        const posts = await req.db.prepare(`
+          SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC
+        `).all(req.user.id);
+        
+        console.log('✅ Posts trouvés (sans comments):', posts.length);
+        res.json(posts.map(p => ({...p, comments_count: 0})));
+      } catch (e2) {
+        console.error('❌ Erreur requête posts simple:', e2.message);
+        res.json([]);
+      }
+    }
   } catch (error) {
-    console.error('❌ Erreur posts history:', error);
+    console.error('💥 Erreur globale posts history:', error);
     res.json([]); // Retourner un tableau vide en cas d'erreur
   }
 });
