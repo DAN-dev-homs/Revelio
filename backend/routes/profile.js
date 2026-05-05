@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 // GET /api/profile/me — profil complet
 router.get('/me', auth, async (req, res) => {
   const user = await req.db.prepare(
-    'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
+    'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
   ).get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 

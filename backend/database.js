@@ -80,6 +80,7 @@ async function ensureSchema(db) {
         avatar_url  TEXT,
         streak_days INTEGER DEFAULT 0,
         total_hours REAL    DEFAULT 0,
+        badge       TEXT    DEFAULT 'bronze',
         created_at  TEXT    DEFAULT (datetime('now'))
       );
 
@@ -98,6 +99,7 @@ async function ensureSchema(db) {
         audio_duration INTEGER,
         summary       TEXT,
         key_points    TEXT,
+        reading_time_min INTEGER DEFAULT 5,
         amazon_url    TEXT,
         created_at    TEXT    DEFAULT (datetime('now'))
       );
@@ -199,6 +201,7 @@ async function ensureSchema(db) {
         avatar_url  TEXT,
         streak_days INTEGER DEFAULT 0,
         total_hours REAL    DEFAULT 0,
+        badge       TEXT    DEFAULT 'bronze',
         created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -217,6 +220,7 @@ async function ensureSchema(db) {
         audio_duration INTEGER,
         summary       TEXT,
         key_points    TEXT,
+        reading_time_min INTEGER DEFAULT 5,
         amazon_url    TEXT,
         created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -348,10 +352,10 @@ async function seedData(db) {
   };
 
   const resultBook = await db.prepare(
-    'INSERT INTO books (title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO books (title, author, cover_color, category, duration_min, level, summary, key_points, reading_time_min, amazon_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     book1.title, book1.author, book1.cover_color, book1.category, book1.duration_min, book1.level,
-    book1.summary, book1.key_points, book1.amazon_url
+    book1.summary, book1.key_points, 8, book1.amazon_url
   );
   const bookId1 = resultBook.lastInsertRowid;
 

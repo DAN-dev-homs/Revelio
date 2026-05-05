@@ -4,6 +4,23 @@
 const router = require('express').Router();
 const { auth } = require('../middleware/auth');
 
+async function updateUserBadge(db, userId) {
+  const booksCompleted = (await db.prepare(
+    'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+  ).get(userId)).c;
+
+  let newBadge = 'bronze';
+  if (booksCompleted >= 10000) {
+    newBadge = 'diamond';
+  } else if (booksCompleted >= 1000) {
+    newBadge = 'gold';
+  } else if (booksCompleted >= 100) {
+    newBadge = 'silver';
+  }
+
+  await db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(newBadge, userId);
+}
+
 // GET /api/books/categories — catégories disponibles pour les filtres
 router.get('/categories', auth, async (req, res) => {
   const categories = await req.db.prepare('SELECT name FROM categories ORDER BY name ASC').all();
@@ -112,9 +129,10 @@ router.patch('/:id/progress', auth, async (req, res) => {
 
   if (session) {
     if (session.progress_pct < 100 && pct === 100) {
-      const book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(req.params.id);
+      const book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
       if (book) {
-        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.duration_min || 0) / 60, req.user.id);
+        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, req.user.id);
+        await updateUserBadge(req.db, req.user.id);
       }
     }
     await req.db.prepare(
@@ -123,9 +141,10 @@ router.patch('/:id/progress', auth, async (req, res) => {
     ).run(pct, req.user.id, req.params.id);
   } else {
     if (pct === 100) {
-      const book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(req.params.id);
+      const book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
       if (book) {
-        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.duration_min || 0) / 60, req.user.id);
+        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, req.user.id);
+        await updateUserBadge(req.db, req.user.id);
       }
     }
     await req.db.prepare(
