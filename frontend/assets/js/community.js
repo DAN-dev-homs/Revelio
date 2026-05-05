@@ -80,15 +80,25 @@ const CommunityPage = (() => {
   }
 
   function renderUsersTab(container) {
+    console.log('🎯 Initialisation onglet utilisateurs');
+    
     const searchInput = container.querySelector('#user-search-input');
     const clearBtn = container.querySelector('#clear-search-btn');
     const resultsContainer = container.querySelector('#users-search-results');
     const initialMessage = container.querySelector('#users-initial-message');
     
+    if (!searchInput || !clearBtn || !resultsContainer || !initialMessage) {
+      console.error('❌ Éléments manquants dans l\'onglet utilisateurs');
+      return;
+    }
+    
+    console.log('✅ Éléments trouvés, ajout des écouteurs');
+    
     // Gérer la recherche
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.trim();
+      console.log('⌨️ Input changé:', query);
       
       // Afficher/masquer le bouton clear
       clearBtn.style.display = query ? 'block' : 'none';
@@ -100,6 +110,7 @@ const CommunityPage = (() => {
       resultsContainer.innerHTML = '';
       
       if (query.length >= 2) {
+        console.log('🔍 Lancement recherche dans 300ms...');
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
           searchUsers(query, resultsContainer);
@@ -111,23 +122,32 @@ const CommunityPage = (() => {
     
     // Bouton clear
     clearBtn.addEventListener('click', () => {
+      console.log('🗑️ Clear search');
       searchInput.value = '';
       clearBtn.style.display = 'none';
       resultsContainer.innerHTML = '';
       initialMessage.style.display = 'block';
       searchInput.focus();
     });
+    
+    // Focus automatique sur le champ de recherche
+    setTimeout(() => searchInput.focus(), 100);
   }
 
   async function searchUsers(query, resultsContainer) {
+    console.log('🔍 Début recherche pour:', query);
+    
     try {
-      resultsContainer.innerHTML = '<div class="loading-spinner">🔍 Recherche en cours...</div>';
+      resultsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">🔍 Recherche en cours...</div>';
       
+      console.log('📡 Appel API searchUsers...');
       const users = await api.searchUsers(query);
+      console.log('📥 Résultats API:', users);
       
-      if (users.length === 0) {
+      if (!users || users.length === 0) {
+        console.log('😔 Aucun utilisateur trouvé');
         resultsContainer.innerHTML = `
-          <div class="empty-state">
+          <div style="text-align: center; padding: 20px;">
             <div style="font-size: 32px; margin-bottom: 8px;">😔</div>
             <p>Aucun utilisateur trouvé pour "${query}"</p>
           </div>
@@ -135,22 +155,34 @@ const CommunityPage = (() => {
         return;
       }
       
-      resultsContainer.innerHTML = users.map(user => renderUserCard(user)).join('');
+      console.log(`✅ ${users.length} utilisateurs trouvés`);
+      resultsContainer.innerHTML = users.map(user => {
+        console.log('👤 Traitement utilisateur:', user);
+        return renderUserCard(user);
+      }).join('');
       
       // Ajouter les écouteurs d'événements pour les cartes utilisateur
-      resultsContainer.querySelectorAll('.user-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const userId = card.dataset.userId;
+      resultsContainer.querySelectorAll('.user-card').forEach((card, index) => {
+        const userId = card.dataset.userId;
+        console.log(`🖱️ Ajout écouteur clic pour utilisateur ${userId} (index ${index})`);
+        
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          console.log('👆 Click sur utilisateur:', userId);
           showUserProfile(userId);
         });
+        
+        // Ajouter un curseur pointer
+        card.style.cursor = 'pointer';
       });
       
     } catch (error) {
-      console.error('Search users error:', error);
+      console.error('❌ Erreur recherche utilisateurs:', error);
       resultsContainer.innerHTML = `
-        <div class="empty-state">
+        <div style="text-align: center; padding: 20px;">
           <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
-          <p>Erreur lors de la recherche</p>
+          <p>Erreur lors de la recherche: ${error.message}</p>
+          <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Réessayer</button>
         </div>
       `;
     }
@@ -208,13 +240,25 @@ const CommunityPage = (() => {
   }
 
   function showUserProfile(userId) {
+    console.log('👤 Affichage profil utilisateur:', userId);
+    
     // Naviguer vers une page de profil utilisateur
     // Pour l'instant, on peut afficher les détails dans un modal
     api.getUserProfile(userId).then(userProfile => {
-      alert(`Profil de ${userProfile.name}\n\n📚 Livres lus: ${userProfile.books_completed}\n⏱️ Temps de lecture: ${Math.round(userProfile.total_hours)}h\n🏆 Badge: ${userProfile.badge || 'bronze'}\n📝 Posts récents: ${userProfile.recent_posts.length}`);
+      console.log('📥 Profil utilisateur reçu:', userProfile);
+      
+      const profileText = `Profil de ${userProfile.name}
+      
+📚 Livres lus: ${userProfile.books_completed || 0}
+⏱️ Temps de lecture: ${Math.round(userProfile.total_hours || 0)}h
+🏆 Badge: ${userProfile.badge || 'bronze'}
+📝 Posts récents: ${userProfile.recent_posts?.length || 0}
+📅 Membre depuis: ${new Date(userProfile.created_at).toLocaleDateString('fr-FR')}`;
+      
+      alert(profileText);
     }).catch(error => {
-      console.error('Get user profile error:', error);
-      alert('Erreur lors du chargement du profil');
+      console.error('❌ Erreur chargement profil:', error);
+      alert('Erreur lors du chargement du profil: ' + error.message);
     });
   }
 
