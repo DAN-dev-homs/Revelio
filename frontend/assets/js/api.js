@@ -60,16 +60,36 @@ const api = (() => {
     const opts = { method, headers, cache: 'no-store' };
     if (body) opts.body = JSON.stringify(body);
 
-    const res = await fetch(`${API_BASE}${path}`, opts);
-    const data = await res.json().catch(() => ({}));
+    console.log(`📡 API ${method} ${API_BASE}${path}`, body ? 'avec body' : 'sans body');
 
-    if (res.status === 401) {
-      clearToken();
-      window.location.hash = '#login';
-      return null;
+    try {
+      const res = await fetch(`${API_BASE}${path}`, opts);
+      const data = await res.json().catch(() => {
+        console.error('❌ Impossible de parser la réponse JSON');
+        return {};
+      });
+
+      console.log(`📥 API réponse ${res.status}:`, data);
+
+      if (res.status === 401) {
+        console.log('🔒 Token expiré ou invalide, redirection vers login');
+        clearToken();
+        window.location.hash = '#login';
+        return null;
+      }
+      
+      if (!res.ok) {
+        const errorMessage = data.error || `HTTP ${res.status}`;
+        console.error(`❌ Erreur API ${res.status}:`, errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      console.log(`✅ API ${method} ${path} succès`);
+      return normalizeMediaUrls(data);
+    } catch (error) {
+      console.error(`💥 Erreur réseau ou serveur pour ${method} ${path}:`, error);
+      throw error;
     }
-    if (!res.ok) throw new Error(data.error || 'Request failed');
-    return normalizeMediaUrls(data);
   }
 
   const get    = (path)        => request('GET',   path);

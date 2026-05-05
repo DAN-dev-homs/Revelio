@@ -9,15 +9,46 @@ const ProfilePage = (() => {
   let cachedPostsHistory = [];
 
   async function render(container) {
-    const [profile, savedBooks, postsHistory] = await Promise.all([
-      api.getProfile(),
-      api.getSavedBooks(),
-      api.getPostsHistory().catch(() => []),
-    ]);
-    cachedProfile = profile;
-    cachedSavedBooks = savedBooks;
-    cachedPostsHistory = postsHistory;
-    renderCurrentView(container);
+    console.log('👤 Début chargement profil...');
+    try {
+      const [profile, savedBooks, postsHistory] = await Promise.all([
+        api.getProfile().then(p => {
+          console.log('✅ Profil reçu:', p);
+          return p;
+        }).catch(e => {
+          console.error('❌ Erreur chargement profil:', e);
+          throw e;
+        }),
+        api.getSavedBooks().then(b => {
+          console.log('📚 Livres sauvegardés:', b?.length || 0);
+          return b;
+        }).catch(e => {
+          console.error('❌ Erreur livres sauvegardés:', e);
+          return [];
+        }),
+        api.getPostsHistory().catch(() => {
+          console.log('📝 Historique posts: erreur, utilisation tableau vide');
+          return [];
+        }),
+      ]);
+      
+      console.log('🎯 Données chargées, mise en cache...');
+      cachedProfile = profile;
+      cachedSavedBooks = savedBooks;
+      cachedPostsHistory = postsHistory;
+      renderCurrentView(container);
+    } catch (error) {
+      console.error('💥 Erreur globale chargement profil:', error);
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+          <h3 style="margin-bottom: 8px;">Erreur de chargement</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 16px;">Une erreur est survenue lors du chargement du profil.</p>
+          <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Détail: ${error.message}</p>
+          <button onclick="location.reload()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Réessayer</button>
+        </div>
+      `;
+    }
   }
 
   function renderCurrentView(container) {
