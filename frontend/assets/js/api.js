@@ -115,6 +115,10 @@ const api = (() => {
     getComments:    (id)        => get(`/community/posts/${id}/comments`),
     addComment:     (id, content) => post(`/community/posts/${id}/comments`, { content }),
 
+    // Profile
+    searchUsers:     (query)    => get(`/profile/search?q=${encodeURIComponent(query)}`),
+    getUserProfile:  (id)       => get(`/profile/${id}`),
+
     // Notifications
     getNotifications:      () => get('/notifications'),
     markNotificationsRead: () => patch('/notifications/read-all', {}),

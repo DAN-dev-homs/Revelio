@@ -28,6 +28,92 @@ router.get('/me', auth, async (req, res) => {
   res.json({ ...user, books_completed: booksCompleted });
 });
 
+// GET /api/profile/search?q=query — rechercher des utilisateurs
+router.get('/search', auth, async (req, res) => {
+  const { q } = req.query;
+  if (!q || q.trim().length < 2) {
+    return res.json([]);
+  }
+
+  try {
+    const searchTerm = `%${q.trim().toLowerCase()}%`;
+    const users = await req.db.prepare(`
+      SELECT id, name, email, avatar_url, badge, created_at, streak_days, total_hours
+      FROM users 
+      WHERE LOWER(name) LIKE ? OR LOWER(email) LIKE ?
+      ORDER BY name ASC
+      LIMIT 20
+    `).all(searchTerm, searchTerm);
+
+    // Ajouter le nombre de livres complétés pour chaque utilisateur
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      const booksCompleted = (await req.db.prepare(
+        'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+      ).get(user.id)).c;
+      
+      return {
+        ...user,
+        books_completed: booksCompleted
+      };
+    }));
+
+    res.json(usersWithStats);
+  } catch (e) {
+    console.error('Search users error:', e);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// GET /api/profile/:id — profil public d'un utilisateur
+router.get('/:id', auth, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  try {
+    let user;
+    try {
+      user = await req.db.prepare(
+        'SELECT id, name, avatar_url, badge, created_at, streak_days, total_hours FROM users WHERE id = ?'
+      ).get(userId);
+    } catch (e) {
+      // Si le champ badge n'existe pas
+      user = await req.db.prepare(
+        'SELECT id, name, avatar_url, created_at, streak_days, total_hours FROM users WHERE id = ?'
+      ).get(userId);
+      if (user) user.badge = 'bronze';
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Statistiques de l'utilisateur
+    const booksCompleted = (await req.db.prepare(
+      'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+    ).get(userId)).c;
+
+    // Posts récents de l'utilisateur
+    const recentPosts = await req.db.prepare(`
+      SELECT id, content, type, likes_count, comments_count, created_at
+      FROM community_posts 
+      WHERE user_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `).all(userId);
+
+    res.json({
+      ...user,
+      books_completed: booksCompleted,
+      recent_posts: recentPosts
+    });
+  } catch (e) {
+    console.error('Get user profile error:', e);
+    res.status(500).json({ error: 'Failed to get user profile' });
+  }
+});
+
 // GET /api/profile/saved-books
 router.get('/saved-books', auth, async (req, res) => {
   const books = await req.db.prepare(`

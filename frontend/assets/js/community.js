@@ -25,8 +25,17 @@ const CommunityPage = (() => {
           data-i18n="community.tab_today">${i18n.t('community.tab_today')}</button>
         <button class="tab-item ${activeTab === 'community' ? 'active' : ''}" id="tab-community"
           data-i18n="community.tab_community">${i18n.t('community.tab_community')}</button>
+        <button class="tab-item ${activeTab === 'users' ? 'active' : ''}" id="tab-users">
+          👥 Utilisateurs
+        </button>
       </div>
 
+      ${activeTab === 'users' ? buildUsersTab() : buildCommunityTab()}
+    `;
+  }
+
+  function buildCommunityTab() {
+    return `
       <!-- Bouton partage -->
       <div class="add-post-bar tap-feedback" id="open-post-modal">
         <div class="add-btn">
@@ -44,7 +53,177 @@ const CommunityPage = (() => {
     `;
   }
 
+  function buildUsersTab() {
+    return `
+      <!-- Barre de recherche d'utilisateurs -->
+      <div class="search-container" style="margin-bottom: var(--spacing-xl);">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="user-search-input" class="search-input" placeholder="Rechercher un utilisateur..." autocomplete="off">
+          <button id="clear-search-btn" class="clear-search-btn" style="display: none;">✕</button>
+        </div>
+      </div>
+
+      <!-- Résultats de recherche -->
+      <div id="users-search-results" class="flex flex-col gap-md"></div>
+      
+      <!-- Message initial -->
+      <div id="users-initial-message" class="empty-state">
+        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+        <h3 style="margin-bottom: 8px;">Rechercher des utilisateurs</h3>
+        <p style="color: var(--text-secondary);">Entrez un nom ou email pour trouver des membres de la communauté</p>
+      </div>
+    `;
+  }
+
+  function renderUsersTab(container) {
+    const searchInput = container.querySelector('#user-search-input');
+    const clearBtn = container.querySelector('#clear-search-btn');
+    const resultsContainer = container.querySelector('#users-search-results');
+    const initialMessage = container.querySelector('#users-initial-message');
+    
+    // Gérer la recherche
+    let searchTimeout;
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      
+      // Afficher/masquer le bouton clear
+      clearBtn.style.display = query ? 'block' : 'none';
+      
+      // Afficher/masquer le message initial
+      initialMessage.style.display = query ? 'none' : 'block';
+      
+      // Effacer les résultats précédents
+      resultsContainer.innerHTML = '';
+      
+      if (query.length >= 2) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          searchUsers(query, resultsContainer);
+        }, 300); // Debounce de 300ms
+      } else if (query.length === 0) {
+        resultsContainer.innerHTML = '';
+      }
+    });
+    
+    // Bouton clear
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      resultsContainer.innerHTML = '';
+      initialMessage.style.display = 'block';
+      searchInput.focus();
+    });
+  }
+
+  async function searchUsers(query, resultsContainer) {
+    try {
+      resultsContainer.innerHTML = '<div class="loading-spinner">🔍 Recherche en cours...</div>';
+      
+      const users = await api.searchUsers(query);
+      
+      if (users.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size: 32px; margin-bottom: 8px;">😔</div>
+            <p>Aucun utilisateur trouvé pour "${query}"</p>
+          </div>
+        `;
+        return;
+      }
+      
+      resultsContainer.innerHTML = users.map(user => renderUserCard(user)).join('');
+      
+      // Ajouter les écouteurs d'événements pour les cartes utilisateur
+      resultsContainer.querySelectorAll('.user-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const userId = card.dataset.userId;
+          showUserProfile(userId);
+        });
+      });
+      
+    } catch (error) {
+      console.error('Search users error:', error);
+      resultsContainer.innerHTML = `
+        <div class="empty-state">
+          <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
+          <p>Erreur lors de la recherche</p>
+        </div>
+      `;
+    }
+  }
+
+  function renderUserCard(user) {
+    const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2) || '??';
+    const avatarHtml = user.avatar_url 
+      ? `<img src="${user.avatar_url}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`
+      : initials;
+    
+    const badgeIcon = user.badge ? {
+      bronze: '🥉',
+      silver: '🥈',
+      gold: '🥇',
+      diamond: '💎'
+    }[user.badge] : '';
+    
+    return `
+      <div class="user-card tap-feedback" data-user-id="${user.id}" style="
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="user-avatar" style="
+            width: 48px; height: 48px; 
+            background: var(--primary); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-weight: 600;
+            flex-shrink: 0;
+          ">${avatarHtml}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <div style="font-weight: 600; color: var(--text);">${user.name}</div>
+              ${badgeIcon ? `<span style="font-size: 16px;" title="${user.badge} badge">${badgeIcon}</span>` : ''}
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+              📚 ${user.books_completed || 0} livres • ⏱️ ${Math.round(user.total_hours || 0)}h
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);">
+              Membre depuis ${new Date(user.created_at).toLocaleDateString('fr-FR')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function showUserProfile(userId) {
+    // Naviguer vers une page de profil utilisateur
+    // Pour l'instant, on peut afficher les détails dans un modal
+    api.getUserProfile(userId).then(userProfile => {
+      alert(`Profil de ${userProfile.name}\n\n📚 Livres lus: ${userProfile.books_completed}\n⏱️ Temps de lecture: ${Math.round(userProfile.total_hours)}h\n🏆 Badge: ${userProfile.badge || 'bronze'}\n📝 Posts récents: ${userProfile.recent_posts.length}`);
+    }).catch(error => {
+      console.error('Get user profile error:', error);
+      alert('Erreur lors du chargement du profil');
+    });
+  }
+
   function renderFeed(container) {
+    if (activeTab === 'users') {
+      renderUsersTab(container);
+      return;
+    }
+
     const feed = container.querySelector('#community-feed');
     if (!feed) return;
 
@@ -243,9 +422,23 @@ const CommunityPage = (() => {
       container.querySelector('#tab-community').classList.add('active');
       renderFeed(container);
     });
+    
+    // Nouvel onglet utilisateurs
+    const usersTab = container.querySelector('#tab-users');
+    if (usersTab) {
+      usersTab.addEventListener('click', () => {
+        activeTab = 'users';
+        container.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        usersTab.classList.add('active');
+        renderFeed(container);
+      });
+    }
 
-    // Ouvrir modal post
-    container.querySelector('#open-post-modal').addEventListener('click', () => App.openPostModal());
+    // Ouvrir modal post (uniquement pour l'onglet communauté)
+    const openPostBtn = container.querySelector('#open-post-modal');
+    if (openPostBtn) {
+      openPostBtn.addEventListener('click', () => App.openPostModal());
+    }
   }
 
   function isToday(dateStr) {
