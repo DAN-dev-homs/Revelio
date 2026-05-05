@@ -7,9 +7,18 @@ const bcrypt = require('bcryptjs');
 
 // GET /api/profile/me — profil complet
 router.get('/me', auth, async (req, res) => {
-  const user = await req.db.prepare(
-    'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
-  ).get(req.user.id);
+  let user;
+  try {
+    user = await req.db.prepare(
+      'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
+    ).get(req.user.id);
+  } catch (e) {
+    // Si le champ badge n'existe pas, faire la requête sans lui
+    user = await req.db.prepare(
+      'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
+    ).get(req.user.id);
+    if (user) user.badge = 'bronze'; // Badge par défaut
+  }
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   const booksCompleted = (await req.db.prepare(

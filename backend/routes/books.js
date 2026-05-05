@@ -18,7 +18,12 @@ async function updateUserBadge(db, userId) {
     newBadge = 'silver';
   }
 
-  await db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(newBadge, userId);
+  try {
+    await db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(newBadge, userId);
+  } catch (e) {
+    // Si le champ badge n'existe pas, ignorer silencieusement
+    console.log('Badge field not found, skipping badge update');
+  }
 }
 
 // GET /api/books/categories — catégories disponibles pour les filtres
@@ -129,7 +134,14 @@ router.patch('/:id/progress', auth, async (req, res) => {
 
   if (session) {
     if (session.progress_pct < 100 && pct === 100) {
-      const book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
+      let book;
+      try {
+        book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
+      } catch (e) {
+        // Si le champ reading_time_min n'existe pas, utiliser duration_min
+        book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(req.params.id);
+        if (book) book.reading_time_min = book.duration_min || 5;
+      }
       if (book) {
         await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, req.user.id);
         await updateUserBadge(req.db, req.user.id);
@@ -141,7 +153,14 @@ router.patch('/:id/progress', auth, async (req, res) => {
     ).run(pct, req.user.id, req.params.id);
   } else {
     if (pct === 100) {
-      const book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
+      let book;
+      try {
+        book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
+      } catch (e) {
+        // Si le champ reading_time_min n'existe pas, utiliser duration_min
+        book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(req.params.id);
+        if (book) book.reading_time_min = book.duration_min || 5;
+      }
       if (book) {
         await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, req.user.id);
         await updateUserBadge(req.db, req.user.id);
