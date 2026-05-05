@@ -113,6 +113,88 @@ router.get('/search', auth, async (req, res) => {
   }
 });
 
+// GET /api/profile/saved-books
+router.get('/saved-books', auth, async (req, res) => {
+  const books = await req.db.prepare(`
+    SELECT b.* FROM saved_books sb
+    JOIN books b ON b.id = sb.book_id
+    WHERE sb.user_id = ?
+    ORDER BY sb.saved_at DESC
+  `).all(req.user.id);
+  res.json(books);
+});
+
+// GET /api/profile/reading — livres en cours
+router.get('/reading', auth, async (req, res) => {
+  const sessions = await req.db.prepare(`
+    SELECT b.*, rs.progress_pct, rs.updated_at
+    FROM reading_sessions rs
+    JOIN books b ON b.id = rs.book_id
+    WHERE rs.user_id = ? AND rs.progress_pct < 100
+    ORDER BY rs.updated_at DESC
+  `).all(req.user.id);
+  res.json(sessions);
+});
+
+// GET /api/profile/posts-history — historique des posts utilisateur
+router.get('/posts-history', auth, async (req, res) => {
+  try {
+    console.log('📝 Requête posts-history pour user:', req.user.id);
+    
+    // Vérifier d'abord si des posts existent
+    try {
+      const allPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts').get();
+      console.log('📊 Total posts dans la table posts:', allPosts);
+    } catch (e) {
+      console.error('❌ Erreur COUNT posts:', e.message);
+      res.json([]);
+      return;
+    }
+    
+    try {
+      const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(req.user.id);
+      console.log('👤 Posts pour cet utilisateur:', userPosts);
+    } catch (e) {
+      console.error('❌ Erreur COUNT user posts:', e.message);
+      res.json([]);
+      return;
+    }
+    
+    try {
+      console.log('🔍 Requête posts avec comments...');
+      const posts = await req.db.prepare(`
+        SELECT p.*, COUNT(c.id) as comments_count
+        FROM posts p
+        LEFT JOIN comments c ON c.post_id = p.id
+        WHERE p.user_id = ?
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+      `).all(req.user.id);
+      
+      console.log('✅ Posts trouvés:', posts.length);
+      res.json(posts);
+    } catch (e) {
+      console.error('❌ Erreur requête posts avec comments:', e.message);
+      // Essayer sans les commentaires
+      try {
+        console.log('🔄 Tentative requête posts sans comments...');
+        const posts = await req.db.prepare(`
+          SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC
+        `).all(req.user.id);
+        
+        console.log('✅ Posts trouvés (sans comments):', posts.length);
+        res.json(posts.map(p => ({...p, comments_count: 0})));
+      } catch (e2) {
+        console.error('❌ Erreur requête posts simple:', e2.message);
+        res.json([]);
+      }
+    }
+  } catch (error) {
+    console.error('💥 Erreur globale posts history:', error);
+    res.json([]); // Retourner un tableau vide en cas d'erreur
+  }
+});
+
 // GET /api/profile/:id — profil public d'un utilisateur
 router.get('/:id', auth, async (req, res) => {
   const userId = parseInt(req.params.id);
