@@ -12,35 +12,46 @@ const ProfilePage = (() => {
     console.log('👤 Début chargement profil...');
     try {
       console.log('🔄 Appel des APIs...');
-      const [profile, savedBooks, postsHistory] = await Promise.all([
-        api.getProfile().then(p => {
-          console.log('✅ Profil reçu:', p);
-          return p;
-        }).catch(e => {
-          console.error('❌ Erreur profil:', e);
-          throw e;
-        }),
-        api.getSavedBooks().then(b => {
-          console.log('📚 Livres sauvegardés reçus:', b);
-          return b;
-        }).catch(e => {
-          console.error('❌ Erreur livres sauvegardés:', e);
-          return [];
-        }),
-        api.getPostsHistory().then(posts => {
-          console.log('📝 Posts historique reçus:', posts);
-          return posts;
-        }).catch(e => {
-          console.error('❌ Erreur posts historique:', e);
-          return [];
-        }),
-      ]);
+      
+      // Test individuel des APIs pour un meilleur debugging
+      let profile, savedBooks, postsHistory;
+      
+      try {
+        console.log('🔍 Test API getProfile...');
+        profile = await api.getProfile();
+        console.log('✅ Profil reçu:', profile);
+      } catch (e) {
+        console.error('❌ Erreur getProfile:', e);
+        throw new Error('Erreur profil: ' + e.message);
+      }
+      
+      try {
+        console.log('🔍 Test API getSavedBooks...');
+        savedBooks = await api.getSavedBooks();
+        console.log('📚 Livres sauvegardés reçus:', savedBooks);
+      } catch (e) {
+        console.error('❌ Erreur getSavedBooks:', e);
+        savedBooks = [];
+      }
+      
+      try {
+        console.log('🔍 Test API getPostsHistory...');
+        postsHistory = await api.getPostsHistory();
+        console.log('📝 Posts historique reçus:', postsHistory);
+      } catch (e) {
+        console.error('❌ Erreur getPostsHistory:', e);
+        postsHistory = [];
+      }
       
       console.log('🎯 Données chargées, mise en cache...');
       cachedProfile = profile;
       cachedSavedBooks = savedBooks;
       cachedPostsHistory = postsHistory;
+      
+      console.log('🎨 Début rendu HTML...');
       renderCurrentView(container);
+      console.log('✅ Rendu terminé');
+      
     } catch (error) {
       console.error('💥 Erreur globale chargement profil:', error);
       container.innerHTML = `
