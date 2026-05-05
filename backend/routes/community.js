@@ -11,18 +11,18 @@ const fs = require('fs');
 router.get('/posts', auth, async (req, res) => {
   const posts = await req.db.prepare(`
     SELECT p.*, u.name AS author_name, u.avatar_url AS author_avatar, u.badge AS author_badge
-    FROM community_posts p
+    FROM posts p
     JOIN users u ON u.id = p.user_id
     ORDER BY p.created_at DESC
     LIMIT 50
   `).all();
 
   const likedIds = (await req.db.prepare(
-    'SELECT post_id FROM community_post_likes WHERE user_id = ?'
+    'SELECT post_id FROM post_likes WHERE user_id = ?'
   ).all(req.user.id)).map(r => r.post_id);
 
   const commentCounts = (await req.db.prepare(
-    'SELECT post_id, COUNT(*) as cnt FROM community_comments GROUP BY post_id'
+    'SELECT post_id, COUNT(*) as cnt FROM comments GROUP BY post_id'
   ).all()).reduce((acc, r) => { acc[r.post_id] = r.cnt; return acc; }, {});
 
   res.json(posts.map(p => ({
@@ -44,11 +44,11 @@ router.post('/posts', auth, async (req, res) => {
     return res.status(400).json({ error: 'Content too long (max 1000 chars)' });
 
   const result = await req.db.prepare(
-    'INSERT INTO community_posts (user_id, type, content, image_url) VALUES (?, ?, ?, ?)'
+    'INSERT INTO posts (user_id, type, content, image_url) VALUES (?, ?, ?, ?)'
   ).run(req.user.id, type, content.trim(), image_url || null);
 
   const post = await req.db.prepare(
-    'SELECT p.*, u.name AS author_name, u.avatar_url AS author_avatar, u.badge AS author_badge FROM community_posts p JOIN users u ON u.id = p.user_id WHERE p.id = ?'
+    'SELECT p.*, u.name AS author_name, u.avatar_url AS author_avatar, u.badge AS author_badge FROM posts p JOIN users u ON u.id = p.user_id WHERE p.id = ?'
   ).get(result.lastInsertRowid);
 
   res.status(201).json({ ...post, is_liked: false, comments_count: 0 });
@@ -57,21 +57,21 @@ router.post('/posts', auth, async (req, res) => {
 // POST /api/community/posts/:id/like — toggle like
 router.post('/posts/:id/like', auth, async (req, res) => {
   const postId = parseInt(req.params.id);
-  const post = await req.db.prepare('SELECT id, user_id FROM community_posts WHERE id = ?').get(postId);
+  const post = await req.db.prepare('SELECT id, user_id FROM posts WHERE id = ?').get(postId);
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
   const existing = await req.db.prepare(
-    'SELECT id FROM community_post_likes WHERE post_id = ? AND user_id = ?'
+    'SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?'
   ).get(postId, req.user.id);
 
   if (existing) {
-    await req.db.prepare('DELETE FROM community_post_likes WHERE post_id = ? AND user_id = ?').run(postId, req.user.id);
-    await req.db.prepare('UPDATE community_posts SET likes_count = CASE WHEN likes_count > 0 THEN likes_count - 1 ELSE 0 END WHERE id = ?').run(postId);
-    const updated = await req.db.prepare('SELECT likes_count FROM community_posts WHERE id = ?').get(postId);
+    await req.db.prepare('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?').run(postId, req.user.id);
+    await req.db.prepare('UPDATE posts SET likes_count = CASE WHEN likes_count > 0 THEN likes_count - 1 ELSE 0 END WHERE id = ?').run(postId);
+    const updated = await req.db.prepare('SELECT likes_count FROM posts WHERE id = ?').get(postId);
     res.json({ liked: false, likes_count: updated.likes_count });
   } else {
-    await req.db.prepare('INSERT INTO community_post_likes (post_id, user_id) VALUES (?, ?)').run(postId, req.user.id);
-    await req.db.prepare('UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = ?').run(postId);
+    await req.db.prepare('INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)').run(postId, req.user.id);
+    await req.db.prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?').run(postId);
 
     if (post.user_id !== req.user.id) {
       const liker = await req.db.prepare('SELECT name FROM users WHERE id = ?').get(req.user.id);
@@ -80,7 +80,7 @@ router.post('/posts/:id/like', auth, async (req, res) => {
       ).run(post.user_id, 'like', `${liker?.name || 'Quelqu\'un'} a aimé votre post.`, 0);
     }
 
-    const updated = await req.db.prepare('SELECT likes_count FROM community_posts WHERE id = ?').get(postId);
+    const updated = await req.db.prepare('SELECT likes_count FROM posts WHERE id = ?').get(postId);
     res.json({ liked: true, likes_count: updated.likes_count });
   }
 });
@@ -89,7 +89,7 @@ router.post('/posts/:id/like', auth, async (req, res) => {
 router.get('/posts/:id/comments', auth, async (req, res) => {
   const comments = await req.db.prepare(`
     SELECT c.*, u.name AS author_name, u.avatar_url AS author_avatar
-    FROM community_comments c JOIN users u ON u.id = c.user_id
+    FROM comments c JOIN users u ON u.id = c.user_id
     WHERE c.post_id = ?
     ORDER BY c.created_at ASC
   `).all(req.params.id);
@@ -101,16 +101,16 @@ router.post('/posts/:id/comments', auth, async (req, res) => {
   const { content } = req.body;
   if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
 
-  const post = await req.db.prepare('SELECT id, user_id FROM community_posts WHERE id = ?').get(req.params.id);
+  const post = await req.db.prepare('SELECT id, user_id FROM posts WHERE id = ?').get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
   const result = await req.db.prepare(
-    'INSERT INTO community_comments (post_id, user_id, content) VALUES (?, ?, ?)'
+    'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)'
   ).run(req.params.id, req.user.id, content.trim());
 
   const comment = await req.db.prepare(`
     SELECT c.*, u.name AS author_name, u.avatar_url AS author_avatar
-    FROM community_comments c JOIN users u ON u.id = c.user_id
+    FROM comments c JOIN users u ON u.id = c.user_id
     WHERE c.id = ?
   `).get(result.lastInsertRowid);
 

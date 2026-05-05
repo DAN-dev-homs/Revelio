@@ -163,8 +163,8 @@ router.get('/posts-history', auth, async (req, res) => {
   try {
     const posts = await req.db.prepare(`
       SELECT p.*, COUNT(c.id) as comments_count
-      FROM community_posts p
-      LEFT JOIN community_comments c ON c.post_id = p.id
+      FROM posts p
+      LEFT JOIN comments c ON c.post_id = p.id
       WHERE p.user_id = ?
       GROUP BY p.id
       ORDER BY p.created_at DESC
