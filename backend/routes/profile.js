@@ -58,6 +58,23 @@ router.get('/me', auth, async (req, res) => {
         'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
       ).get(req.user.id);
       booksCompleted = booksResult.c;
+    } catch (e) {
+      console.log('❌ Erreur comptage livres:', e.message);
+      booksCompleted = 0;
+    }
+    
+    if (!user) {
+      console.log('❌ Utilisateur non trouvé');
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let booksCompleted = 0;
+    try {
+      // Compter chaque livre unique terminé une seule fois
+      const booksResult = await req.db.prepare(
+        'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+      ).get(req.user.id);
+      booksCompleted = booksResult.c;
       console.log('📚 Livres uniques complétés calculés:', booksCompleted);
     } catch (e) {
       console.error('❌ Erreur comptage livres complétés:', e);

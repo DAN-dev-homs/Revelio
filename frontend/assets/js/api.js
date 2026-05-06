@@ -150,7 +150,7 @@ const api = (() => {
     search:         (q)         => get(`/discover/search?q=${encodeURIComponent(q)}`),
 
     // Profile
-    getProfile:     ()          => get('/profile/me'),
+    getProfile:     ()          => get('/profile/me', null, 'GET'),
     getSavedBooks:  ()          => get('/profile/saved-books'),
     getReadingList: ()          => get('/profile/reading'),
     getPostsHistory: ()         => get('/profile/posts-history'),
