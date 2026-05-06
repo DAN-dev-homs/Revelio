@@ -330,4 +330,62 @@ router.post('/users/:id/badge', async (req, res) => {
   });
 });
 
+// GET /api/admin/posts — Lister tous les posts avec infos auteurs
+router.get('/posts', async (req, res) => {
+  try {
+    const posts = await req.db.prepare(`
+      SELECT 
+        p.id,
+        p.content,
+        p.type,
+        p.likes_count,
+        p.created_at,
+        u.name as author_name,
+        u.email as author_email
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      ORDER BY p.created_at DESC
+      LIMIT 100
+    `).all();
+    
+    res.json(posts);
+  } catch (e) {
+    console.error('Get admin posts error:', e);
+    res.status(500).json({ error: 'Failed to get posts' });
+  }
+});
+
+// DELETE /api/admin/posts/:id — Supprimer un post
+router.delete('/posts/:id', async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    
+    // Récupérer les infos du post pour le log
+    const post = await req.db.prepare(`
+      SELECT p.content, u.name as author_name, u.email as author_email
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.id = ?
+    `).get(postId);
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    // Supprimer le post
+    await req.db.prepare('DELETE FROM posts WHERE id = ?').run(postId);
+    
+    // Logger l'action
+    await logActivity(req.db, req.user.id, 'delete_post', 
+      `Deleted post by ${post.author_email}: "${post.content.substring(0, 50)}..."`, 
+      req.ip
+    );
+    
+    res.json({ success: true, message: 'Post supprimé avec succès' });
+  } catch (e) {
+    console.error('Delete admin post error:', e);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
 module.exports = router;

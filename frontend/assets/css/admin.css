@@ -414,6 +414,7 @@ th {
   border-radius: 4px; 
   font-size: 11px; 
   font-weight: 600; 
+  text-transform: uppercase;
 }
 
 .badge-admin { 
@@ -434,6 +435,38 @@ th {
 .badge-yellow { 
   background: rgba(245,158,11,0.15); 
   color: var(--yellow); 
+}
+
+/* Badges de mérite dynamiques */
+.badge-bronze {
+  background: #CD7F32;
+  color: white;
+}
+
+.badge-silver {
+  background: #C0C0C0;
+  color: white;
+}
+
+.badge-gold {
+  background: #FFD700;
+  color: #333;
+}
+
+.badge-diamond {
+  background: #00CED1;
+  color: white;
+}
+
+/* Badges de type de post */
+.badge-testimony {
+  background: rgba(59,130,246,0.15);
+  color: var(--blue);
+}
+
+.badge-thought {
+  background: rgba(16,185,129,0.15);
+  color: var(--green);
 }
 
 /* ===== BUTTON VARIANTS ===== */

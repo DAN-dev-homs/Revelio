@@ -326,10 +326,11 @@ async function deleteBook(id, title) {
 // ══════════════════════════════════════════════════════════
 // ── UTILISATEURS ─────────────────────────────────────────
 // ══════════════════════════════════════════════════════════
-async function loadUsers() {
+async function loadUsers(searchQuery = '') {
   const tbody = document.getElementById('users-table-body');
   try {
-    const users = await apiFetch('GET', '/admin/users');
+    const endpoint = searchQuery ? `/admin/users/search?q=${encodeURIComponent(searchQuery)}` : '/admin/users';
+    const users = await apiFetch('GET', endpoint);
     tbody.innerHTML = users.map(u => `
       <tr>
         <td>
@@ -340,19 +341,7 @@ async function loadUsers() {
         <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
         <td style="font-size:12px;color:var(--muted);">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
         <td>
-          <span class="badge badge-${u.badge || 'bronze'}" style="
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 8px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-right: 8px;
-            ${(u.badge || 'bronze') === 'bronze' ? 'background: #CD7F32; color: white;' : ''}
-            ${(u.badge || 'bronze') === 'silver' ? 'background: #C0C0C0; color: white;' : ''}
-            ${(u.badge || 'bronze') === 'gold' ? 'background: #FFD700; color: #333;' : ''}
-            ${(u.badge || 'bronze') === 'diamond' ? 'background: #00CED1; color: white;' : ''}
-          ">${u.badge || 'bronze'}</span>
+          <span class="badge badge-${u.badge || 'bronze'}">${u.badge || 'bronze'}</span>
         </td>
         <td>
           <div class="actions">
@@ -365,6 +354,57 @@ async function loadUsers() {
       </tr>`).join('');
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="6" class="alert alert-error">${e.message}</td></tr>`;
+  }
+}
+
+// Fonction de recherche d'utilisateurs
+async function searchUsers() {
+  const searchInput = document.getElementById('user-search');
+  const query = searchInput.value.trim();
+  loadUsers(query);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── POSTS ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+async function loadPosts() {
+  const tbody = document.getElementById('posts-table-body');
+  try {
+    const posts = await apiFetch('GET', '/admin/posts');
+    tbody.innerHTML = posts.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">Aucun post</td></tr>'
+      : posts.map(p => `
+        <tr>
+          <td>
+            <div style="font-weight:500;">${p.author_name}</div>
+            <div style="font-size:11px;color:var(--muted);">${p.author_email}</div>
+          </td>
+          <td>
+            <div style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${p.content}
+            </div>
+          </td>
+          <td><span class="badge badge-${p.type}">${p.type}</span></td>
+          <td style="font-size:12px;color:var(--muted);">${p.likes_count || 0}</td>
+          <td style="font-size:12px;color:var(--muted);">${new Date(p.created_at).toLocaleDateString('fr-FR')}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-danger btn-sm" onclick="deletePost(${p.id}, '${p.author_name.replace(/'/g, "\\'")}')">🗑️ Supprimer</button>
+            </div>
+          </td>
+        </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" class="alert alert-error">${e.message}</td></tr>`;
+  }
+}
+
+async function deletePost(postId, authorName) {
+  if (!confirm(`Supprimer le post de "${authorName}" ? Cette action est irréversible.`)) return;
+  try {
+    await apiFetch('DELETE', `/admin/posts/${postId}`);
+    loadPosts(); // Recharger la liste des posts
+  } catch (e) {
+    alert('Erreur lors de la suppression du post: ' + e.message);
   }
 }
 
