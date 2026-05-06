@@ -60,12 +60,110 @@ router.get('/me', auth, async (req, res) => {
       booksCompleted = 0;
     }
 
+    // Calculer dynamiquement les heures de lecture réelles
+    let totalHours = 0;
+    try {
+      const readingSessions = await req.db.prepare(`
+        SELECT updated_at, progress_pct 
+        FROM reading_sessions 
+        WHERE user_id = ? AND progress_pct > 0
+        ORDER BY updated_at ASC
+      `).all(req.user.id);
+      
+      console.log('📚 Sessions de lecture trouvées:', readingSessions.length);
+      
+      // Calculer les heures basées sur le temps de lecture réel
+      // Chaque session représente environ 2 minutes (120 secondes) pour 100% de progression
+      // Donc 1% = 1.2 secondes = 0.033 minutes = 0.00055 heures
+      for (const session of readingSessions) {
+        const hoursFromSession = (session.progress_pct / 100) * (2/60); // 2 minutes = 2/60 heures
+        totalHours += hoursFromSession;
+      }
+      
+      console.log('⏱️ Heures calculées dynamiquement:', totalHours);
+      
+      // Mettre à jour la base de données avec les nouvelles valeurs
+      await req.db.prepare(`
+        UPDATE users 
+        SET total_hours = ?, streak_days = COALESCE((
+          WITH RECURSIVE dates(d) AS (
+            SELECT CURRENT_DATE
+            UNION ALL
+            SELECT DATE(d, '-1 day') FROM dates 
+            WHERE d > DATE(CURRENT_DATE, '-30 days')
+          )
+          SELECT COUNT(*) - 1
+          FROM dates d
+          WHERE EXISTS (
+            SELECT 1 FROM reading_sessions rs 
+            WHERE rs.user_id = ? AND DATE(rs.updated_at) = d
+          )
+          AND d NOT IN (
+            SELECT d FROM dates d2 
+            WHERE NOT EXISTS (
+              SELECT 1 FROM reading_sessions rs 
+              WHERE rs.user_id = ? AND DATE(rs.updated_at) = d2
+            )
+            AND d2 < (
+              SELECT MAX(DATE(updated_at)) 
+              FROM reading_sessions 
+              WHERE user_id = ? AND DATE(updated_at) <= d2
+            )
+          )
+        ), 0)
+        WHERE id = ?
+      `).run(totalHours, req.user.id, req.user.id, req.user.id, req.user.id);
+      
+      console.log('✅ Base de données mise à jour');
+      
+    } catch (e) {
+      console.error('❌ Erreur calcul heures:', e);
+      totalHours = user.total_hours || 0;
+    }
+
+    // Calculer le streak actuel (jours consécutifs avec lecture)
+    let streakDays = 0;
+    try {
+      const streakResult = await req.db.prepare(`
+        WITH RECURSIVE dates(d) AS (
+          SELECT CURRENT_DATE
+          UNION ALL
+          SELECT DATE(d, '-1 day') FROM dates 
+          WHERE d > DATE(CURRENT_DATE, '-30 days')
+        )
+        SELECT COUNT(*) - 1 as streak
+        FROM dates d
+        WHERE EXISTS (
+          SELECT 1 FROM reading_sessions rs 
+          WHERE rs.user_id = ? AND DATE(rs.updated_at) = d
+        )
+        AND d NOT IN (
+          SELECT d FROM dates d2 
+          WHERE NOT EXISTS (
+            SELECT 1 FROM reading_sessions rs 
+            WHERE rs.user_id = ? AND DATE(rs.updated_at) = d2
+          )
+          AND d2 < (
+            SELECT MAX(DATE(updated_at)) 
+            FROM reading_sessions 
+            WHERE user_id = ? AND DATE(updated_at) <= d2
+          )
+        )
+      `).get(req.user.id, req.user.id, req.user.id);
+      
+      streakDays = streakResult?.streak || 0;
+      console.log('🔥 Streak calculé:', streakDays);
+    } catch (e) {
+      console.error('❌ Erreur calcul streak:', e);
+      streakDays = user.streak_days || 0;
+    }
+
     const profileData = { 
       ...user, 
       books_completed: booksCompleted,
-      // Assurer que tous les champs nécessaires existent
-      streak_days: user.streak_days || 0,
-      total_hours: user.total_hours || 0,
+      // Utiliser les valeurs calculées dynamiquement
+      streak_days: streakDays,
+      total_hours: totalHours,
       badge: user.badge || 'bronze'
     };
     
