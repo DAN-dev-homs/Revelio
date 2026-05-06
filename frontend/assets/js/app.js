@@ -8,7 +8,7 @@ if (typeof window === 'undefined') {
 } else {
 
 const App = (() => {
-  const PAGES = ['home', 'explore', 'community', 'profile', 'book-detail'];
+  const PAGES = ['home', 'explore', 'community', 'profile', 'book-detail', 'public-profile'];
   let currentPage = 'home';
   let currentParams = {};
   let selectedImageUrl = null;
@@ -26,10 +26,24 @@ const App = (() => {
     buildShell();
     NotificationPanel.init();
     NotificationPanel.startAutoRefresh();
-    await navigateTo('home');
+    
+    // Gérer le hash initial
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      await navigateTo(hash);
+    } else {
+      await navigateTo('home');
+    }
 
-    // Écouter les changements de langue
+    // Écouter les changements de hash pour la navigation
     if (typeof window !== 'undefined') {
+      window.addEventListener('hashchange', async () => {
+        const hash = window.location.hash.slice(1);
+        if (hash) {
+          await navigateTo(hash);
+        }
+      });
+      
       window.addEventListener('langChanged', () => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         loadPage(currentPage, currentParams);
@@ -173,6 +187,13 @@ const App = (() => {
 
   /** Navigation vers une page */
   async function navigateTo(page, params = {}) {
+    // Gérer les profils publics avec URLs de type profile/{id}
+    if (page.startsWith('profile/')) {
+      const userId = page.split('/')[1];
+      page = 'public-profile';
+      params = { id: userId };
+    }
+    
     if (!PAGES.includes(page)) page = 'home';
     currentPage = page;
     currentParams = params;
@@ -204,6 +225,7 @@ const App = (() => {
         case 'community':   await CommunityPage.render(el); break;
         case 'profile':     await ProfilePage.render(el);   break;
         case 'book-detail': await BookDetailPage.render(el, params.id); break;
+        case 'public-profile': await PublicProfilePage.render(el, params.id); break;
       }
     } catch (err) {
       el.innerHTML = `<div class="empty-state">

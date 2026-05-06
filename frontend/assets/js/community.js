@@ -218,26 +218,10 @@ const CommunityPage = (() => {
   }
 
   function showUserProfile(userId) {
-    console.log('👤 Affichage profil utilisateur:', userId);
+    console.log('👤 Navigation vers profil utilisateur:', userId);
     
-    // Naviguer vers une page de profil utilisateur
-    // Pour l'instant, on peut afficher les détails dans un modal
-    api.getUserProfile(userId).then(userProfile => {
-      console.log('📥 Profil utilisateur reçu:', userProfile);
-      
-      const profileText = `Profil de ${userProfile.name}
-      
-📚 Livres lus: ${userProfile.books_completed || 0}
-⏱️ Temps de lecture: ${Math.round(userProfile.total_hours || 0)}h
-🏆 Badge: ${userProfile.badge || 'bronze'}
-📝 Posts récents: ${userProfile.recent_posts?.length || 0}
-📅 Membre depuis: ${new Date(userProfile.created_at).toLocaleDateString('fr-FR')}`;
-      
-      alert(profileText);
-    }).catch(error => {
-      console.error('❌ Erreur chargement profil:', error);
-      alert('Erreur lors du chargement du profil: ' + error.message);
-    });
+    // Naviguer vers la page de profil utilisateur
+    window.location.hash = `profile/${userId}`;
   }
 
   function renderFeed(container) {
