@@ -25,8 +25,11 @@ router.get('/me', auth, async (req, res) => {
         user = await req.db.prepare(
           'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
         ).get(req.user.id);
-        if (user) user.badge = 'bronze'; // Badge par défaut
-        console.log('⚠️ Utilisateur sans badge, badge par défaut ajouté');
+        if (user) {
+          // Ne pas écraser le badge existant, utiliser null si non trouvé
+          user.badge = null;
+        }
+        console.log('⚠️ Utilisateur sans champ badge, badge laissé à null');
       } catch (e2) {
         console.log('❌ Erreur requête sans badge:', e2.message);
         // Essayer avec les champs minimums
@@ -37,7 +40,7 @@ router.get('/me', auth, async (req, res) => {
           user.streak_days = 0;
           user.total_hours = 0;
           user.avatar_url = null;
-          user.badge = 'bronze';
+          user.badge = null; // Ne pas écraser avec bronze
         }
         console.log('🔄 Utilisateur avec champs minimums:', user);
       }
@@ -158,13 +161,26 @@ router.get('/me', auth, async (req, res) => {
       streakDays = user.streak_days || 0;
     }
 
+    // Calculer le badge en fonction des heures de lecture (nouvelle logique)
+    let calculatedBadge = 'bronze';
+    if (totalHours >= 30 && totalHours < 100) calculatedBadge = 'silver';
+    if (totalHours >= 100 && totalHours < 200) calculatedBadge = 'gold';
+    if (totalHours >= 200) calculatedBadge = 'diamond';
+    
+    console.log('🏆 Badge calculé:', calculatedBadge, 'pour', totalHours, 'heures');
+
+    // Utiliser le badge manuel de l'admin s'il existe, sinon utiliser le badge calculé
+    const finalBadge = user.badge || calculatedBadge;
+    
+    console.log('🎖️ Badge final:', finalBadge, '(manuel:', user.badge, ', calculé:', calculatedBadge, ')');
+
     const profileData = { 
       ...user, 
       books_completed: booksCompleted,
       // Utiliser les valeurs calculées dynamiquement
       streak_days: streakDays,
       total_hours: totalHours,
-      badge: user.badge || 'bronze'
+      badge: finalBadge
     };
     
     console.log('✅ Données profil finales:', profileData);
@@ -311,7 +327,7 @@ router.get('/:id', auth, async (req, res) => {
       user = await req.db.prepare(
         'SELECT id, name, avatar_url, created_at, streak_days, total_hours FROM users WHERE id = ?'
       ).get(userId);
-      if (user) user.badge = 'bronze';
+      if (user) user.badge = null; // Ne pas écraser avec bronze
     }
 
     if (!user) {
@@ -332,10 +348,20 @@ router.get('/:id', auth, async (req, res) => {
       LIMIT 5
     `).all(userId);
 
+    // Calculer le badge en fonction des heures de lecture (nouvelle logique)
+    let calculatedBadge = 'bronze';
+    if (user.total_hours >= 30 && user.total_hours < 100) calculatedBadge = 'silver';
+    if (user.total_hours >= 100 && user.total_hours < 200) calculatedBadge = 'gold';
+    if (user.total_hours >= 200) calculatedBadge = 'diamond';
+    
+    // Utiliser le badge manuel de l'admin s'il existe, sinon utiliser le badge calculé
+    const finalBadge = user.badge || calculatedBadge;
+
     res.json({
       ...user,
       books_completed: booksCompleted,
-      recent_posts: recentPosts
+      recent_posts: recentPosts,
+      badge: finalBadge
     });
   } catch (e) {
     console.error('Get user profile error:', e);
