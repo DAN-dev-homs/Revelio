@@ -16,15 +16,11 @@ const PublicProfilePage = (() => {
       
       cachedProfile = userProfile;
       
-      // Récupérer les posts de l'utilisateur
-      const posts = await api.getPostsHistory();
-      console.log('📝 Posts reçus:', posts);
-      
-      // Filtrer les posts pour cet utilisateur
-      const userPosts = posts.filter(post => post.user_id === parseInt(userId));
+      // Utiliser les posts déjà récupérés dans userProfile
+      const userPosts = userProfile.recent_posts || [];
       cachedPosts = userPosts;
       
-      console.log('📊 Posts filtrés pour cet utilisateur:', userPosts.length);
+      console.log('📊 Posts de l utilisateur:', userPosts.length);
       
       // Afficher le profil
       renderProfile(container);
@@ -36,7 +32,7 @@ const PublicProfilePage = (() => {
           <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
           <h3 style="margin-bottom: 8px;">Profil introuvable</h3>
           <p style="color: var(--text-secondary); margin-bottom: 16px;">Ce profil n'existe pas ou n'est pas accessible.</p>
-          <button onclick="history.back()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Retour</button>
+          <button onclick="window.location.hash = 'community'" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Retour</button>
         </div>
       `;
     }
@@ -48,7 +44,7 @@ const PublicProfilePage = (() => {
     
     container.innerHTML = `
       <header class="page-header">
-        <button class="icon-btn tap-feedback" onclick="history.back()" aria-label="Retour">
+        <button class="icon-btn tap-feedback" onclick="window.location.hash = 'community'" aria-label="Retour">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>

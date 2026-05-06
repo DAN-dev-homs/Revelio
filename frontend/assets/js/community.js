@@ -224,6 +224,9 @@ const CommunityPage = (() => {
     window.location.hash = `profile/${userId}`;
   }
 
+  // Rendre la fonction accessible globalement
+  window.showUserProfile = showUserProfile;
+
   function renderFeed(container) {
     // Initialiser la recherche d'utilisateurs (toujours disponible)
     initializeUserSearch(container);
