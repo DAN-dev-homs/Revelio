@@ -355,6 +355,35 @@ router.get('/posts', async (req, res) => {
   }
 });
 
+// GET /api/admin/posts/search — Rechercher des posts
+router.get('/posts/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    const searchTerm = `%${q.trim().toLowerCase()}%`;
+    
+    const posts = await req.db.prepare(`
+      SELECT 
+        p.id,
+        p.content,
+        p.type,
+        p.likes_count,
+        p.created_at,
+        u.name as author_name,
+        u.email as author_email
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE (LOWER(p.content) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ?)
+      ORDER BY p.created_at DESC
+      LIMIT 100
+    `).all(searchTerm, searchTerm, searchTerm);
+    
+    res.json(posts);
+  } catch (e) {
+    console.error('Search admin posts error:', e);
+    res.status(500).json({ error: 'Failed to search posts' });
+  }
+});
+
 // DELETE /api/admin/posts/:id — Supprimer un post
 router.delete('/posts/:id', async (req, res) => {
   try {

@@ -367,10 +367,11 @@ async function searchUsers() {
 // ══════════════════════════════════════════════════════════
 // ── POSTS ───────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════
-async function loadPosts() {
+async function loadPosts(searchQuery = '') {
   const tbody = document.getElementById('posts-table-body');
   try {
-    const posts = await apiFetch('GET', '/admin/posts');
+    const endpoint = searchQuery ? `/admin/posts/search?q=${encodeURIComponent(searchQuery)}` : '/admin/posts';
+    const posts = await apiFetch('GET', endpoint);
     tbody.innerHTML = posts.length === 0
       ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">Aucun post</td></tr>'
       : posts.map(p => `
@@ -406,6 +407,13 @@ async function deletePost(postId, authorName) {
   } catch (e) {
     alert('Erreur lors de la suppression du post: ' + e.message);
   }
+}
+
+// Fonction de recherche de posts
+async function searchPosts() {
+  const searchInput = document.getElementById('post-search');
+  const query = searchInput.value.trim();
+  loadPosts(query);
 }
 
 // ── BADGE MODAL ───────────────────────────────────────────────

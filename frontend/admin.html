@@ -120,7 +120,11 @@
     <div id="tab-posts" class="tab-content">
       <div class="page-header">
         <h2 class="page-title">📝 Posts Communautaires</h2>
-        <button class="btn btn-ghost" onclick="loadPosts()">↻ Actualiser</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" id="post-search" class="form-input" placeholder="Rechercher par auteur ou contenu..." style="width: 250px;">
+          <button class="btn btn-ghost" onclick="searchPosts()">🔍 Rechercher</button>
+          <button class="btn btn-ghost" onclick="loadPosts()">↻ Actualiser</button>
+        </div>
       </div>
       <div class="card">
         <div class="table-wrap">
