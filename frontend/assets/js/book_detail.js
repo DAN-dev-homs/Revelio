@@ -421,9 +421,13 @@ const BookDetailPage = (() => {
       };
       
       const startTimer = () => {
+        console.log('▶️ Tentative de démarrage du timer, isActive:', isActive);
         if (!isActive) {
+          console.log('✅ Démarrage du timer autorisé');
           isActive = true;
           startTime = Date.now() - (60 - timeRemaining) * 1000;
+          
+          console.log('⏱️ Timer démarré - startTime:', startTime, 'timeRemaining:', timeRemaining);
           
           timerInterval = setInterval(() => {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -431,6 +435,8 @@ const BookDetailPage = (() => {
             
             // Calculer la progression
             const progress = Math.round(((60 - timeRemaining) / 60) * 100);
+            
+            console.log('⏰ Timer tick - elapsed:', elapsed, 'timeRemaining:', timeRemaining, 'progress:', progress + '%');
             
             // Mettre à jour l'affichage
             updateTimerDisplay();
@@ -443,16 +449,21 @@ const BookDetailPage = (() => {
             
             // Marquer comme complété à 100%
             if (timeRemaining === 0) {
+              console.log('🎉 Timer terminé !');
               clearInterval(timerInterval);
               isActive = false;
               clearTimerState(); // Nettoyer l'état quand terminé
-              timerIndicator.innerHTML = `
-                <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
-                <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
-              `;
+              if (timerIndicator) {
+                timerIndicator.innerHTML = `
+                  <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                  <div style="font-size: 18px; color: #4CAF50;">100%</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+                `;
+              }
             }
           }, 1000);
+        } else {
+          console.log('⚠️ Timer déjà actif, démarrage ignoré');
         }
       };
       
@@ -467,9 +478,11 @@ const BookDetailPage = (() => {
       
       // Initialiser le timer avec l'état sauvegardé
       const initializeTimer = () => {
+        console.log('🔧 Initialisation du timer pour le livre:', b.id);
         const savedState = loadTimerState();
         
         if (savedState && savedState.bookId === b.id) {
+          console.log('📂 État sauvegardé trouvé:', savedState);
           // Restaurer l'état sauvegardé
           timeRemaining = savedState.timeRemaining;
           isActive = savedState.isActive;
@@ -479,15 +492,21 @@ const BookDetailPage = (() => {
             const elapsedSinceSave = Math.floor((Date.now() - savedState.lastSaved) / 1000);
             timeRemaining = Math.max(0, timeRemaining - elapsedSinceSave);
             
+            console.log('⏰ Temps écoulé depuis sauvegarde:', elapsedSinceSave, 'secondes');
+            console.log('⏱️ Temps restant après calcul:', timeRemaining, 'secondes');
+            
             if (timeRemaining === 0) {
               // Le timer est terminé pendant que l'onglet était fermé
+              console.log('✅ Timer terminé pendant la fermeture');
               clearTimerState();
               isActive = false;
-              timerIndicator.innerHTML = `
-                <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
-                <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
-              `;
+              if (timerIndicator) {
+                timerIndicator.innerHTML = `
+                  <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                  <div style="font-size: 18px; color: #4CAF50;">100%</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+                `;
+              }
             } else {
               // Reprendre automatiquement le timer
               console.log('🔄 Reprise automatique du timer, temps restant:', timeRemaining);
@@ -495,11 +514,12 @@ const BookDetailPage = (() => {
             }
           } else {
             // Timer était en pause, juste restaurer l'affichage
+            console.log('⏸️ Timer était en pause, restauration de l\'affichage');
             updateTimerDisplay();
           }
         } else {
           // Pas d'état sauvegardé, commencer automatiquement
-          console.log('🚀 Démarrage automatique du timer');
+          console.log('🚀 Pas d\'état sauvegardé, démarrage automatique du timer');
           startTimer();
         }
       };
