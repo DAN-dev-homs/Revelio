@@ -228,6 +228,27 @@ router.get('/users', async (req, res) => {
   res.json(users);
 });
 
+// GET /api/admin/users/search — Rechercher des utilisateurs
+router.get('/users/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    const searchTerm = `%${q.trim().toLowerCase()}%`;
+    
+    const users = await req.db.prepare(`
+      SELECT id, name, email, role, avatar_url, streak_days, total_hours, created_at 
+      FROM users 
+      WHERE (LOWER(name) LIKE ? OR LOWER(email) LIKE ?)
+      ORDER BY created_at DESC
+      LIMIT 100
+    `).all(searchTerm, searchTerm);
+    
+    res.json(users);
+  } catch (e) {
+    console.error('Search admin users error:', e);
+    res.status(500).json({ error: 'Failed to search users' });
+  }
+});
+
 // POST /api/admin/users — Créer un compte (admin ou user)
 router.post('/users', async (req, res) => {
   const { name, email, password, role } = req.body;
