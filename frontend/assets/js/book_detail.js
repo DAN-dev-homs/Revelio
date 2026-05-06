@@ -311,6 +311,51 @@ const BookDetailPage = (() => {
       let timeRemaining = 120; // 2 minutes en secondes
       let isActive = false;
       
+      // Clé pour sauvegarder l'état du timer pour ce livre
+      const timerStateKey = `timer_state_${b.id}`;
+      
+      // Récupérer l'état sauvegardé du timer
+      const loadTimerState = () => {
+        try {
+          const savedState = localStorage.getItem(timerStateKey);
+          if (savedState) {
+            const state = JSON.parse(savedState);
+            console.log('📂 État du timer chargé:', state);
+            return state;
+          }
+        } catch (e) {
+          console.error('❌ Erreur chargement état timer:', e);
+        }
+        return null;
+      };
+      
+      // Sauvegarder l'état du timer
+      const saveTimerState = () => {
+        try {
+          const state = {
+            timeRemaining,
+            isActive,
+            startTime,
+            bookId: b.id,
+            lastSaved: Date.now()
+          };
+          localStorage.setItem(timerStateKey, JSON.stringify(state));
+          console.log('💾 État du timer sauvegardé:', state);
+        } catch (e) {
+          console.error('❌ Erreur sauvegarde état timer:', e);
+        }
+      };
+      
+      // Nettoyer l'état du timer quand terminé
+      const clearTimerState = () => {
+        try {
+          localStorage.removeItem(timerStateKey);
+          console.log('🧹 État du timer nettoyé');
+        } catch (e) {
+          console.error('❌ Erreur nettoyage état timer:', e);
+        }
+      };
+      
       // Ajouter un indicateur de timer visible
       const timerIndicator = document.createElement('div');
       timerIndicator.style.cssText = `
@@ -390,6 +435,9 @@ const BookDetailPage = (() => {
             // Mettre à jour l'affichage
             updateTimerDisplay();
             
+            // Sauvegarder l'état toutes les secondes
+            saveTimerState();
+            
             // Envoyer la progression au backend
             api.updateProgress(b.id, progress).catch(e => console.error('Erreur updateProgress:', e));
             
@@ -397,6 +445,7 @@ const BookDetailPage = (() => {
             if (timeRemaining === 0) {
               clearInterval(timerInterval);
               isActive = false;
+              clearTimerState(); // Nettoyer l'état quand terminé
               timerIndicator.innerHTML = `
                 <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
                 <div style="font-size: 18px; color: #4CAF50;">100%</div>
@@ -411,7 +460,47 @@ const BookDetailPage = (() => {
         if (isActive) {
           clearInterval(timerInterval);
           isActive = false;
+          saveTimerState(); // Sauvegarder l'état quand on pause
           updateTimerDisplay();
+        }
+      };
+      
+      // Initialiser le timer avec l'état sauvegardé
+      const initializeTimer = () => {
+        const savedState = loadTimerState();
+        
+        if (savedState && savedState.bookId === b.id) {
+          // Restaurer l'état sauvegardé
+          timeRemaining = savedState.timeRemaining;
+          isActive = savedState.isActive;
+          
+          // Si le timer était actif, calculer le temps écoulé depuis la sauvegarde
+          if (isActive && savedState.lastSaved) {
+            const elapsedSinceSave = Math.floor((Date.now() - savedState.lastSaved) / 1000);
+            timeRemaining = Math.max(0, timeRemaining - elapsedSinceSave);
+            
+            if (timeRemaining === 0) {
+              // Le timer est terminé pendant que l'onglet était fermé
+              clearTimerState();
+              isActive = false;
+              timerIndicator.innerHTML = `
+                <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                <div style="font-size: 18px; color: #4CAF50;">100%</div>
+                <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+              `;
+            } else {
+              // Reprendre automatiquement le timer
+              console.log('🔄 Reprise automatique du timer, temps restant:', timeRemaining);
+              startTimer();
+            }
+          } else {
+            // Timer était en pause, juste restaurer l'affichage
+            updateTimerDisplay();
+          }
+        } else {
+          // Pas d'état sauvegardé, commencer automatiquement
+          console.log('🚀 Démarrage automatique du timer');
+          startTimer();
         }
       };
       
@@ -425,24 +514,20 @@ const BookDetailPage = (() => {
         }
       });
       
-      // Nettoyage quand on quitte la page
+      // Nettoyage quand on quitte la page ou ferme l'onglet
       const cleanup = () => {
         if (timerInterval) {
           clearInterval(timerInterval);
+          saveTimerState(); // Sauvegarder l'état au nettoyage
         }
       };
       
-      // Observer pour détecter quand la section est visible
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting && !isActive && timeRemaining === 120) {
-            // Démarrer automatiquement quand la section devient visible
-            startTimer();
-          }
-        });
-      }, { threshold: 0.5 });
+      // Écouter les événements de fermeture d'onglet
+      window.addEventListener('beforeunload', cleanup);
+      window.addEventListener('pagehide', cleanup);
       
-      observer.observe(summarySection);
+      // Initialiser le timer automatiquement
+      initializeTimer();
     }
   }
 
