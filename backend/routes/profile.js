@@ -73,10 +73,10 @@ router.get('/me', auth, async (req, res) => {
       console.log('📚 Sessions de lecture trouvées:', readingSessions.length);
       
       // Calculer les heures basées sur le temps de lecture réel
-      // Chaque session représente environ 2 minutes (120 secondes) pour 100% de progression
-      // Donc 1% = 1.2 secondes = 0.033 minutes = 0.00055 heures
+      // Chaque session représente environ 1 minute (60 secondes) pour 100% de progression
+      // Donc 1% = 0.6 secondes = 0.01 minutes = 0.000167 heures
       for (const session of readingSessions) {
-        const hoursFromSession = (session.progress_pct / 100) * (2/60); // 2 minutes = 2/60 heures
+        const hoursFromSession = (session.progress_pct / 100) * (1/60); // 1 minute = 1/60 heures
         totalHours += hoursFromSession;
       }
       

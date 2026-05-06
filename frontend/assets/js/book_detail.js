@@ -303,12 +303,12 @@ const BookDetailPage = (() => {
       });
     }
 
-    // Suivi de la progression basé sur un timer de 2 minutes
+    // Suivi de la progression basé sur un timer de 1 minute
     const summarySection = container.querySelector('#section-summary');
     if (summarySection) {
       let timerInterval = null;
       let startTime = null;
-      let timeRemaining = 120; // 2 minutes en secondes
+      let timeRemaining = 60; // 1 minute en secondes
       let isActive = false;
       
       // Clé pour sauvegarder l'état du timer pour ce livre
@@ -377,7 +377,7 @@ const BookDetailPage = (() => {
       `;
       timerIndicator.innerHTML = `
         <div style="margin-bottom: 4px;">⏱️ Temps de lecture</div>
-        <div style="font-size: 18px;">2:00</div>
+        <div style="font-size: 18px;">1:00</div>
         <button id="start-timer-btn" style="
           margin-top: 8px;
           padding: 6px 12px;
@@ -407,7 +407,7 @@ const BookDetailPage = (() => {
           startBtn.textContent = 'Pause';
           startBtn.style.background = '#ff6b6b';
           startBtn.style.color = 'white';
-        } else if (timeRemaining === 120) {
+        } else if (timeRemaining === 60) {
           timeDisplay.textContent = formatTime(timeRemaining);
           startBtn.textContent = 'Commencer la lecture';
           startBtn.style.background = 'white';
@@ -423,14 +423,14 @@ const BookDetailPage = (() => {
       const startTimer = () => {
         if (!isActive) {
           isActive = true;
-          startTime = Date.now() - (120 - timeRemaining) * 1000;
+          startTime = Date.now() - (60 - timeRemaining) * 1000;
           
           timerInterval = setInterval(() => {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            timeRemaining = Math.max(0, 120 - elapsed);
+            timeRemaining = Math.max(0, 60 - elapsed);
             
             // Calculer la progression
-            const progress = Math.round(((120 - timeRemaining) / 120) * 100);
+            const progress = Math.round(((60 - timeRemaining) / 60) * 100);
             
             // Mettre à jour l'affichage
             updateTimerDisplay();
