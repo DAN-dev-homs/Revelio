@@ -524,8 +524,8 @@ const BookDetailPage = (() => {
           timeRemaining = savedState.timeRemaining;
           isActive = savedState.isActive;
           
-          // Calculer le temps écoulé depuis la sauvegarde (même si le timer était en pause)
-          if (savedState.lastSaved && timeRemaining > 0 && timeRemaining < 60) {
+          // Calculer le temps écoulé depuis la sauvegarde (toujours, sauf si terminé)
+          if (savedState.lastSaved && timeRemaining > 0) {
             const elapsedSinceSave = Math.floor((Date.now() - savedState.lastSaved) / 1000);
             timeRemaining = Math.max(0, timeRemaining - elapsedSinceSave);
             
@@ -549,24 +549,22 @@ const BookDetailPage = (() => {
               console.log('🔄 Reprise automatique du timer, temps restant:', timeRemaining);
               startTimer();
             }
-          } else {
-            // Timer était terminé ou pas commencé, restaurer l'affichage approprié
-            if (timeRemaining === 0) {
-              console.log('✅ Timer déjà terminé');
-              clearTimerState();
-              isActive = false;
-              if (timerIndicator) {
-                timerIndicator.innerHTML = `
-                  <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
-                  <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                  <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
-                `;
-              }
-            } else {
-              // Timer était au début (60 secondes), juste mettre à jour l'affichage
-              console.log('⏸️ Timer au début, mise à jour de l\'affichage');
-              updateTimerDisplay();
+          } else if (timeRemaining === 0) {
+            // Timer était déjà terminé
+            console.log('✅ Timer déjà terminé');
+            clearTimerState();
+            isActive = false;
+            if (timerIndicator) {
+              timerIndicator.innerHTML = `
+                <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                <div style="font-size: 18px; color: #4CAF50;">100%</div>
+                <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+              `;
             }
+          } else {
+            // Cas par défaut : reprendre quand même pour être sûr
+            console.log('🔄 Reprise par défaut du timer, temps restant:', timeRemaining);
+            startTimer();
           }
         } else {
           // Pas d'état sauvegardé, commencer automatiquement
