@@ -227,8 +227,8 @@ router.get('/:id', auth, async (req, res) => {
 
     // Posts récents de l'utilisateur
     const recentPosts = await req.db.prepare(`
-      SELECT id, content, type, likes_count, comments_count, created_at
-      FROM community_posts 
+      SELECT id, content, type, likes_count, created_at
+      FROM posts 
       WHERE user_id = ? 
       ORDER BY created_at DESC 
       LIMIT 5
