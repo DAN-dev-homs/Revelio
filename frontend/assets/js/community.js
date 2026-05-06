@@ -386,10 +386,10 @@ const CommunityPage = (() => {
     return `
       <article class="post-card tap-feedback" id="post-${post.id}" style="cursor:default;">
         <div class="post-header">
-          <div class="post-avatar">${avatarHtml}</div>
+          <div class="post-avatar" style="cursor: pointer;" onclick="showUserProfile(${post.author_id || post.user_id})">${avatarHtml}</div>
           <div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <div class="post-author-name">${post.author_name}</div>
+              <div class="post-author-name" style="cursor: pointer; color: var(--primary);" onclick="showUserProfile(${post.author_id || post.user_id})">${post.author_name}</div>
               ${badgeIcon ? `<span style="font-size: 14px;" title="${post.author_badge} badge">${badgeIcon}</span>` : ''}
             </div>
             <div class="post-meta">
