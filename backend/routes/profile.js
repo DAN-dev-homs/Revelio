@@ -161,13 +161,13 @@ router.get('/me', auth, async (req, res) => {
       streakDays = user.streak_days || 0;
     }
 
-    // Calculer le badge en fonction des heures de lecture (nouvelle logique)
+    // Calculer le badge en fonction des livres lus (nouvelle logique)
     let calculatedBadge = 'bronze';
-    if (totalHours >= 30 && totalHours < 100) calculatedBadge = 'silver';
-    if (totalHours >= 100 && totalHours < 200) calculatedBadge = 'gold';
-    if (totalHours >= 200) calculatedBadge = 'diamond';
+    if (booksCompleted >= 30 && booksCompleted < 100) calculatedBadge = 'silver';
+    if (booksCompleted >= 100 && booksCompleted < 200) calculatedBadge = 'gold';
+    if (booksCompleted >= 200) calculatedBadge = 'diamond';
     
-    console.log('🏆 Badge calculé:', calculatedBadge, 'pour', totalHours, 'heures');
+    console.log('🏆 Badge calculé:', calculatedBadge, 'pour', booksCompleted, 'livres lus');
 
     // Utiliser le badge manuel de l'admin s'il existe, sinon utiliser le badge calculé
     const finalBadge = user.badge || calculatedBadge;
@@ -348,11 +348,11 @@ router.get('/:id', auth, async (req, res) => {
       LIMIT 5
     `).all(userId);
 
-    // Calculer le badge en fonction des heures de lecture (nouvelle logique)
+    // Calculer le badge en fonction des livres lus (nouvelle logique)
     let calculatedBadge = 'bronze';
-    if (user.total_hours >= 30 && user.total_hours < 100) calculatedBadge = 'silver';
-    if (user.total_hours >= 100 && user.total_hours < 200) calculatedBadge = 'gold';
-    if (user.total_hours >= 200) calculatedBadge = 'diamond';
+    if (booksCompleted >= 30 && booksCompleted < 100) calculatedBadge = 'silver';
+    if (booksCompleted >= 100 && booksCompleted < 200) calculatedBadge = 'gold';
+    if (booksCompleted >= 200) calculatedBadge = 'diamond';
     
     // Utiliser le badge manuel de l'admin s'il existe, sinon utiliser le badge calculé
     const finalBadge = user.badge || calculatedBadge;
