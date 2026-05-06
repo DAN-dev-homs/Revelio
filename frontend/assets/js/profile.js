@@ -107,11 +107,12 @@ const ProfilePage = (() => {
             <div class="profile-name">${profile.name}</div>
             ${profile.badge ? `
               <span class="profile-badge-icon" style="
-                font-size: 20px;
-                ${profile.badge === 'bronze' ? 'color: #CD7F32;' : ''}
-                ${profile.badge === 'silver' ? 'color: #C0C0C0;' : ''}
-                ${profile.badge === 'gold' ? 'color: #FFD700;' : ''}
-                ${profile.badge === 'diamond' ? 'color: #00CED1;' : ''}
+                font-size: 24px;
+                font-weight: bold;
+                ${profile.badge === 'bronze' ? 'color: #CD7F32; text-shadow: 0 1px 2px rgba(205, 127, 50, 0.3);' : ''}
+                ${profile.badge === 'silver' ? 'color: #C0C0C0; text-shadow: 0 1px 2px rgba(192, 192, 192, 0.3);' : ''}
+                ${profile.badge === 'gold' ? 'color: #FFD700; text-shadow: 0 1px 2px rgba(255, 215, 0, 0.4);' : ''}
+                ${profile.badge === 'diamond' ? 'color: #00CED1; text-shadow: 0 1px 2px rgba(0, 206, 209, 0.4);' : ''}
               " title="${profile.badge.charAt(0).toUpperCase() + profile.badge.slice(1)} badge">
                 ${profile.badge === 'bronze' ? '🥉' : ''}
                 ${profile.badge === 'silver' ? '🥈' : ''}

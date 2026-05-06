@@ -331,7 +331,15 @@ async function loadUsers(searchQuery = '') {
   try {
     const endpoint = searchQuery ? `/admin/users/search?q=${encodeURIComponent(searchQuery)}` : '/admin/users';
     const users = await apiFetch('GET', endpoint);
-    tbody.innerHTML = users.map(u => `
+    tbody.innerHTML = users.map(u => {
+      const badgeIcon = u.badge ? {
+        bronze: '🥉',
+        silver: '🥈',
+        gold: '🥇',
+        diamond: '💎'
+      }[u.badge] : '';
+      
+      return `
       <tr>
         <td>
           <div style="font-weight:500;">${u.name}</div>
@@ -341,7 +349,14 @@ async function loadUsers(searchQuery = '') {
         <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
         <td style="font-size:12px;color:var(--muted);">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
         <td>
-          <span class="badge badge-${u.badge || 'bronze'}">${u.badge || 'bronze'}</span>
+          <span class="badge badge-${u.badge || 'bronze'}" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+          ">
+            ${badgeIcon}
+            <span>${u.badge || 'bronze'}</span>
+          </span>
         </td>
         <td>
           <div class="actions">
@@ -351,7 +366,8 @@ async function loadUsers(searchQuery = '') {
             ${u.id !== adminUser.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id}, '${u.name.replace(/'/g,"\\'")}')">✕</button>` : ''}
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="6" class="alert alert-error">${e.message}</td></tr>`;
   }
