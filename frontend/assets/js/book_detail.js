@@ -317,14 +317,27 @@ const BookDetailPage = (() => {
       // Récupérer l'état sauvegardé du timer
       const loadTimerState = () => {
         try {
+          console.log('🔍 Clé de recherche:', timerStateKey);
           const savedState = localStorage.getItem(timerStateKey);
+          console.log('📦 État brut trouvé:', savedState);
+          
           if (savedState) {
             const state = JSON.parse(savedState);
             console.log('📂 État du timer chargé:', state);
-            return state;
+            
+            // Vérifier que l'état est valide
+            if (state && typeof state === 'object' && state.bookId === b.id) {
+              return state;
+            } else {
+              console.warn('⚠️ État invalide, nettoyage...');
+              clearTimerState();
+            }
+          } else {
+            console.log('ℹ️ Aucun état sauvegardé trouvé');
           }
         } catch (e) {
           console.error('❌ Erreur chargement état timer:', e);
+          clearTimerState(); // Nettoyer en cas d'erreur
         }
         return null;
       };
@@ -339,8 +352,15 @@ const BookDetailPage = (() => {
             bookId: b.id,
             lastSaved: Date.now()
           };
-          localStorage.setItem(timerStateKey, JSON.stringify(state));
-          console.log('💾 État du timer sauvegardé:', state);
+          
+          // Vérifier que l'état est cohérent avant de sauvegarder
+          if (timeRemaining >= 0 && timeRemaining <= 60) {
+            localStorage.setItem(timerStateKey, JSON.stringify(state));
+            console.log('💾 État du timer sauvegardé:', state);
+            console.log('🔑 Clé utilisée:', timerStateKey);
+          } else {
+            console.warn('⚠️ Éat incohérent, pas de sauvegarde:', { timeRemaining, isActive });
+          }
         } catch (e) {
           console.error('❌ Erreur sauvegarde état timer:', e);
         }
@@ -350,10 +370,16 @@ const BookDetailPage = (() => {
       const clearTimerState = () => {
         try {
           localStorage.removeItem(timerStateKey);
-          console.log('🧹 État du timer nettoyé');
+          console.log('🧹 État du timer nettoyé pour la clé:', timerStateKey);
         } catch (e) {
           console.error('❌ Erreur nettoyage état timer:', e);
         }
+      };
+      
+      // Forcer une sauvegarde immédiate pour debugging
+      const forceSaveState = () => {
+        console.log('🔥 Force save de l\'état actuel');
+        saveTimerState();
       };
       
       // Ajouter un indicateur de timer visible
@@ -389,6 +415,17 @@ const BookDetailPage = (() => {
           font-size: 12px;
           font-weight: 600;
         ">Commencer la lecture</button>
+        <button id="debug-save-btn" style="
+          margin-top: 4px;
+          padding: 4px 8px;
+          background: #ff6b6b;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 10px;
+          font-weight: 600;
+        ">Debug Save</button>
       `;
       summarySection.insertBefore(timerIndicator, summarySection.firstChild);
       
@@ -546,6 +583,29 @@ const BookDetailPage = (() => {
         } else {
           startTimer();
         }
+      });
+      
+      // Gérer le bouton de debugging
+      const debugBtn = timerIndicator.querySelector('#debug-save-btn');
+      debugBtn.addEventListener('click', () => {
+        console.log('🔍 Debug: État actuel du timer:', {
+          timeRemaining,
+          isActive,
+          startTime,
+          bookId: b.id,
+          timerStateKey
+        });
+        
+        // Forcer une sauvegarde
+        forceSaveState();
+        
+        // Vérifier ce qui est dans localStorage
+        const saved = localStorage.getItem(timerStateKey);
+        console.log('🔍 Debug: Contenu de localStorage:', saved);
+        
+        // Essayer de recharger
+        const reloaded = loadTimerState();
+        console.log('🔍 Debug: État rechargé:', reloaded);
       });
       
       // Nettoyage quand on quitte la page ou ferme l'onglet
