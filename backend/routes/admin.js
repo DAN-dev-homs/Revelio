@@ -222,7 +222,7 @@ router.post('/categories', async (req, res) => {
 // GET /api/admin/users
 router.get('/users', async (req, res) => {
   const users = await req.db.prepare(`
-    SELECT id, name, email, role, avatar_url, streak_days, total_hours, created_at 
+    SELECT id, name, email, role, avatar_url, streak_days, total_hours, created_at, church 
     FROM users ORDER BY created_at DESC
   `).all();
   res.json(users);
@@ -235,12 +235,12 @@ router.get('/users/search', async (req, res) => {
     const searchTerm = `%${q.trim().toLowerCase()}%`;
     
     const users = await req.db.prepare(`
-      SELECT id, name, email, role, avatar_url, streak_days, total_hours, created_at 
+      SELECT id, name, email, role, avatar_url, streak_days, total_hours, created_at, church 
       FROM users 
-      WHERE (LOWER(name) LIKE ? OR LOWER(email) LIKE ?)
+      WHERE (LOWER(name) LIKE ? OR LOWER(email) LIKE ? OR LOWER(church) LIKE ?)
       ORDER BY created_at DESC
       LIMIT 100
-    `).all(searchTerm, searchTerm);
+    `).all(searchTerm, searchTerm, searchTerm);
     
     res.json(users);
   } catch (e) {

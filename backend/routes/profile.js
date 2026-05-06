@@ -14,7 +14,7 @@ router.get('/me', auth, async (req, res) => {
     try {
       console.log('🔍 Requête utilisateur avec badge...');
       user = await req.db.prepare(
-        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge FROM users WHERE id = ?'
+        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge, church FROM users WHERE id = ?'
       ).get(req.user.id);
       console.log('📊 Utilisateur trouvé:', user);
     } catch (e) {
@@ -23,7 +23,7 @@ router.get('/me', auth, async (req, res) => {
       // Si le champ badge n'existe pas, faire la requête sans lui
       try {
         user = await req.db.prepare(
-          'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url FROM users WHERE id = ?'
+          'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, church FROM users WHERE id = ?'
         ).get(req.user.id);
         if (user) {
           // Ne pas écraser le badge existant, utiliser null si non trouvé
@@ -34,7 +34,7 @@ router.get('/me', auth, async (req, res) => {
         console.log('❌ Erreur requête sans badge:', e2.message);
         // Essayer avec les champs minimums
         user = await req.db.prepare(
-          'SELECT id, name, email, created_at FROM users WHERE id = ?'
+          'SELECT id, name, email, created_at, church FROM users WHERE id = ?'
         ).get(req.user.id);
         if (user) {
           user.streak_days = 0;
@@ -321,12 +321,12 @@ router.get('/:id', auth, async (req, res) => {
     let user;
     try {
       user = await req.db.prepare(
-        'SELECT id, name, avatar_url, badge, created_at, streak_days, total_hours FROM users WHERE id = ?'
+        'SELECT id, name, avatar_url, badge, created_at, streak_days, total_hours, church FROM users WHERE id = ?'
       ).get(userId);
     } catch (e) {
       // Si le champ badge n'existe pas
       user = await req.db.prepare(
-        'SELECT id, name, avatar_url, created_at, streak_days, total_hours FROM users WHERE id = ?'
+        'SELECT id, name, avatar_url, created_at, streak_days, total_hours, church FROM users WHERE id = ?'
       ).get(userId);
       if (user) user.badge = null; // Ne pas écraser avec bronze
     }
@@ -454,10 +454,18 @@ router.get('/posts-history', auth, async (req, res) => {
 
 // PATCH /api/profile/me — mettre à jour le profil
 router.patch('/me', auth, async (req, res) => {
-  const { name } = req.body;
+  const { name, church } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
 
-  await req.db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), req.user.id);
+  const updates = [];
+  updates.push('name = ?');
+  if (church !== undefined) {
+    updates.push('church = ?');
+  }
+
+  await req.db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(
+    ...[name.trim(), ...(church !== undefined ? [church.trim()] : []), req.user.id]
+  );
   res.json({ success: true });
 });
 

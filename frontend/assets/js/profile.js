@@ -122,6 +122,12 @@ const ProfilePage = (() => {
           </div>
           <div class="profile-email">${profile.email}</div>
         </div>
+        ${profile.church ? `
+          <div style="margin-top: 8px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border-left: 3px solid var(--primary);">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Église</div>
+            <div style="font-weight: 500; color: var(--primary);">${profile.church}</div>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Stats -->
@@ -261,6 +267,11 @@ const ProfilePage = (() => {
           <input type="text" id="edit-name" value="${profile.name}" class="search-input" style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding-left: 16px;">
         </div>
         
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Église</label>
+          <input type="text" id="edit-church" value="${profile.church || ''}" class="search-input" style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding-left: 16px;" placeholder="Nom de votre église">
+        </div>
+        
         <div style="margin-bottom: 24px;">
           <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Email (lecture seule)</label>
           <input type="email" value="${profile.email}" disabled class="search-input" style="width: 100%; opacity: 0.6; border: 1px solid var(--border-color); border-radius: 8px; padding-left: 16px;">
@@ -373,6 +384,7 @@ const ProfilePage = (() => {
 
     container.querySelector('#save-profile-btn').addEventListener('click', async () => {
       const newName = container.querySelector('#edit-name').value.trim();
+      const newChurch = container.querySelector('#edit-church').value.trim();
       const currentPassword = container.querySelector('#current-password').value;
       const newPassword = container.querySelector('#new-password').value;
       if (!newName) return;
@@ -381,7 +393,7 @@ const ProfilePage = (() => {
       btn.textContent = '...';
       
       try {
-        await api.updateProfile(newName);
+        await api.updateProfile(newName, newChurch);
         if (currentPassword || newPassword) {
           if (!currentPassword || !newPassword) {
             throw new Error('Veuillez renseigner le mot de passe actuel et le nouveau mot de passe.');
@@ -394,8 +406,10 @@ const ProfilePage = (() => {
         // Mettre à jour localstorage
         const user = JSON.parse(localStorage.getItem('revelio_user') || '{}');
         user.name = newName;
+        user.church = newChurch;
         localStorage.setItem('revelio_user', JSON.stringify(user));
         cachedProfile.name = newName;
+        cachedProfile.church = newChurch;
         
         isSettingsView = false;
         renderCurrentView(container);

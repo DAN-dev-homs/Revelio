@@ -86,6 +86,12 @@ const PublicProfilePage = (() => {
             Membre depuis ${new Date(profile.created_at).toLocaleDateString('fr-FR')}
           </div>
         </div>
+        ${profile.church ? `
+          <div style="margin-top: 8px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border-left: 3px solid var(--primary);">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Église</div>
+            <div style="font-weight: 500; color: var(--primary);">${profile.church}</div>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Stats -->
