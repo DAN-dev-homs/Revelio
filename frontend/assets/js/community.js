@@ -234,30 +234,34 @@ const CommunityPage = (() => {
     const feed = container.querySelector('#community-feed');
     if (!feed) return;
 
+    // Appliquer la logique de priorisation des badges Diamond dans TOUS les onglets
     let filtered = posts;
 
+    // Séparer les posts Diamond et les autres
+    const diamondPosts = posts.filter(p => {
+      const authorBadge = p.author_badge || 'bronze';
+      return authorBadge === 'diamond';
+    });
+    
+    const otherPosts = posts.filter(p => {
+      const authorBadge = p.author_badge || 'bronze';
+      return authorBadge !== 'diamond';
+    });
+    
     if (activeTab === 'recent') {
-      // Pour "Les plus récents": prioriser les Diamond, puis aléatoire
-      const diamondPosts = posts.filter(p => {
-        // Récupérer le badge de l'auteur du post
-        const authorBadge = p.author_badge || 'bronze';
-        return authorBadge === 'diamond';
-      });
-      
-      const otherPosts = posts.filter(p => {
-        const authorBadge = p.author_badge || 'bronze';
-        return authorBadge !== 'diamond';
-      });
-      
-      // Mélanger aléatoirement les autres posts
+      // Pour "Les plus récents": Diamond d'abord, puis autres en aléatoire
       const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
-      
-      // Combiner: Diamond d'abord, puis les autres en aléatoire
       filtered = [...diamondPosts, ...shuffledOthers];
     }
-    // Pour 'community': tous les posts en aléatoire complet
+    // Pour 'community': tous les posts en aléatoire mais avec priorisation Diamond
     else if (activeTab === 'community') {
-      filtered = [...posts].sort(() => 0.5 - Math.random());
+      const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
+      filtered = [...diamondPosts, ...shuffledOthers];
+    }
+    // Par défaut, appliquer la même logique
+    else {
+      const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
+      filtered = [...diamondPosts, ...shuffledOthers];
     }
 
     if (filtered.length === 0) {
