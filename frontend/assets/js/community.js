@@ -21,8 +21,8 @@ const CommunityPage = (() => {
   function buildLayout() {
     return `
       <div class="tab-bar">
-        <button class="tab-item ${activeTab === 'today' ? 'active' : ''}" id="tab-today"
-          data-i18n="community.tab_today">${i18n.t('community.tab_today')}</button>
+        <button class="tab-item ${activeTab === 'recent' ? 'active' : ''}" id="tab-recent"
+          data-i18n="community.tab_recent">Les plus récents</button>
         <button class="tab-item ${activeTab === 'community' ? 'active' : ''}" id="tab-community"
           data-i18n="community.tab_community">${i18n.t('community.tab_community')}</button>
       </div>
@@ -234,9 +234,31 @@ const CommunityPage = (() => {
     const feed = container.querySelector('#community-feed');
     if (!feed) return;
 
-    const filtered = activeTab === 'today'
-      ? posts.filter(p => isToday(p.created_at))
-      : posts;
+    let filtered = posts;
+
+    if (activeTab === 'recent') {
+      // Pour "Les plus récents": prioriser les Diamond, puis aléatoire
+      const diamondPosts = posts.filter(p => {
+        // Récupérer le badge de l'auteur du post
+        const authorBadge = p.author_badge || 'bronze';
+        return authorBadge === 'diamond';
+      });
+      
+      const otherPosts = posts.filter(p => {
+        const authorBadge = p.author_badge || 'bronze';
+        return authorBadge !== 'diamond';
+      });
+      
+      // Mélanger aléatoirement les autres posts
+      const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
+      
+      // Combiner: Diamond d'abord, puis les autres en aléatoire
+      filtered = [...diamondPosts, ...shuffledOthers];
+    }
+    // Pour 'community': tous les posts en aléatoire complet
+    else if (activeTab === 'community') {
+      filtered = [...posts].sort(() => 0.5 - Math.random());
+    }
 
     if (filtered.length === 0) {
       feed.innerHTML = `<div class="empty-state">
@@ -428,10 +450,10 @@ const CommunityPage = (() => {
 
   function bindEvents(container) {
     // Tabs
-    container.querySelector('#tab-today').addEventListener('click', () => {
-      activeTab = 'today';
+    container.querySelector('#tab-recent').addEventListener('click', () => {
+      activeTab = 'recent';
       container.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-      container.querySelector('#tab-today').classList.add('active');
+      container.querySelector('#tab-recent').classList.add('active');
       renderFeed(container);
     });
     container.querySelector('#tab-community').addEventListener('click', () => {
