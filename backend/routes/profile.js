@@ -14,7 +14,7 @@ router.get('/me', auth, async (req, res) => {
     try {
       console.log('🔍 Requête utilisateur avec badge...');
       user = await req.db.prepare(
-        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge, church FROM users WHERE id = ?'
+        'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, badge, church FROM users WHERE id = $1'
       ).get(req.user.id);
       console.log('📊 Utilisateur trouvé:', user);
     } catch (e) {
@@ -23,7 +23,7 @@ router.get('/me', auth, async (req, res) => {
       // Si le champ badge n'existe pas, faire la requête sans lui
       try {
         user = await req.db.prepare(
-          'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, church FROM users WHERE id = ?'
+          'SELECT id, name, email, streak_days, total_hours, created_at, avatar_url, church FROM users WHERE id = $1'
         ).get(req.user.id);
         if (user) {
           // Ne pas écraser le badge existant, utiliser null si non trouvé
@@ -34,7 +34,7 @@ router.get('/me', auth, async (req, res) => {
         console.log('❌ Erreur requête sans badge:', e2.message);
         // Essayer avec les champs minimums
         user = await req.db.prepare(
-          'SELECT id, name, email, created_at, church FROM users WHERE id = ?'
+          'SELECT id, name, email, created_at, church FROM users WHERE id = $1'
         ).get(req.user.id);
         if (user) {
           user.streak_days = 0;
@@ -55,7 +55,7 @@ router.get('/me', auth, async (req, res) => {
     try {
       // Compter chaque livre unique terminé une seule fois
       const booksResult = await req.db.prepare(
-        'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+        'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = $1 AND progress_pct = 100'
       ).get(req.user.id);
       booksCompleted = booksResult.c;
       console.log('📚 Livres uniques complétés calculés:', booksCompleted);
@@ -70,7 +70,7 @@ router.get('/me', auth, async (req, res) => {
       const readingSessions = await req.db.prepare(`
         SELECT updated_at, progress_pct 
         FROM reading_sessions 
-        WHERE user_id = ? AND progress_pct > 0
+        WHERE user_id = $1 AND progress_pct > 0
         ORDER BY updated_at ASC
       `).all(req.user.id);
       
@@ -89,33 +89,33 @@ router.get('/me', auth, async (req, res) => {
       // Mettre à jour la base de données avec les nouvelles valeurs
       await req.db.prepare(`
         UPDATE users 
-        SET total_hours = ?, streak_days = COALESCE((
+        SET total_hours = $1, streak_days = COALESCE((
           WITH RECURSIVE dates(d) AS (
             SELECT CURRENT_DATE
             UNION ALL
-            SELECT DATE(d, '-1 day') FROM dates 
-            WHERE d > DATE(CURRENT_DATE, '-30 days')
+            SELECT d - INTERVAL '1 day' FROM dates 
+            WHERE d > CURRENT_DATE - INTERVAL '30 days'
           )
           SELECT COUNT(*) - 1
           FROM dates d
           WHERE EXISTS (
             SELECT 1 FROM reading_sessions rs 
-            WHERE rs.user_id = ? AND DATE(rs.updated_at) = d
+            WHERE rs.user_id = $2 AND DATE(rs.updated_at) = d
           )
           AND d NOT IN (
             SELECT d FROM dates d2 
             WHERE NOT EXISTS (
               SELECT 1 FROM reading_sessions rs 
-              WHERE rs.user_id = ? AND DATE(rs.updated_at) = d2
+              WHERE rs.user_id = $3 AND DATE(rs.updated_at) = d2
             )
             AND d2 < (
               SELECT MAX(DATE(updated_at)) 
               FROM reading_sessions 
-              WHERE user_id = ? AND DATE(updated_at) <= d2
+              WHERE user_id = $4 AND DATE(updated_at) <= d2
             )
           )
         ), 0)
-        WHERE id = ?
+        WHERE id = $5
       `).run(totalHours, req.user.id, req.user.id, req.user.id, req.user.id);
       
       console.log('✅ Base de données mise à jour');
@@ -132,25 +132,25 @@ router.get('/me', auth, async (req, res) => {
         WITH RECURSIVE dates(d) AS (
           SELECT CURRENT_DATE
           UNION ALL
-          SELECT DATE(d, '-1 day') FROM dates 
-          WHERE d > DATE(CURRENT_DATE, '-30 days')
+          SELECT d - INTERVAL '1 day' FROM dates 
+          WHERE d > CURRENT_DATE - INTERVAL '30 days'
         )
         SELECT COUNT(*) - 1 as streak
         FROM dates d
         WHERE EXISTS (
           SELECT 1 FROM reading_sessions rs 
-          WHERE rs.user_id = ? AND DATE(rs.updated_at) = d
+          WHERE rs.user_id = $1 AND DATE(rs.updated_at) = d
         )
         AND d NOT IN (
           SELECT d FROM dates d2 
           WHERE NOT EXISTS (
             SELECT 1 FROM reading_sessions rs 
-            WHERE rs.user_id = ? AND DATE(rs.updated_at) = d2
+            WHERE rs.user_id = $2 AND DATE(rs.updated_at) = d2
           )
           AND d2 < (
             SELECT MAX(DATE(updated_at)) 
             FROM reading_sessions 
-            WHERE user_id = ? AND DATE(updated_at) <= d2
+            WHERE user_id = $3 AND DATE(updated_at) <= d2
           )
         )
       `).get(req.user.id, req.user.id, req.user.id);
@@ -204,7 +204,7 @@ router.get('/search', auth, async (req, res) => {
     const users = await req.db.prepare(`
       SELECT id, name, email, avatar_url, badge, created_at, streak_days, total_hours
       FROM users 
-      WHERE LOWER(name) LIKE ? OR LOWER(email) LIKE ?
+      WHERE LOWER(name) LIKE $1 OR LOWER(email) LIKE $2
       ORDER BY name ASC
       LIMIT 20
     `).all(searchTerm, searchTerm);
@@ -212,7 +212,7 @@ router.get('/search', auth, async (req, res) => {
     // Ajouter le nombre de livres complétés pour chaque utilisateur (comptage unique)
     const usersWithStats = await Promise.all(users.map(async (user) => {
       const booksCompleted = (await req.db.prepare(
-        'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+        'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = $1 AND progress_pct = 100'
       ).get(user.id)).c;
       
       return {
@@ -233,7 +233,7 @@ router.get('/saved-books', auth, async (req, res) => {
   const books = await req.db.prepare(`
     SELECT b.* FROM saved_books sb
     JOIN books b ON b.id = sb.book_id
-    WHERE sb.user_id = ?
+    WHERE sb.user_id = $1
     ORDER BY sb.saved_at DESC
   `).all(req.user.id);
   res.json(books);
@@ -245,7 +245,7 @@ router.get('/reading', auth, async (req, res) => {
     SELECT b.*, rs.progress_pct, rs.updated_at
     FROM reading_sessions rs
     JOIN books b ON b.id = rs.book_id
-    WHERE rs.user_id = ? AND rs.progress_pct < 100
+    WHERE rs.user_id = $1 AND rs.progress_pct < 100
     ORDER BY rs.updated_at DESC
   `).all(req.user.id);
   res.json(sessions);
@@ -267,7 +267,7 @@ router.get('/posts-history', auth, async (req, res) => {
     }
     
     try {
-      const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(req.user.id);
+      const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = $1').get(req.user.id);
       console.log('👤 Posts pour cet utilisateur:', userPosts);
     } catch (e) {
       console.error('❌ Erreur COUNT user posts:', e.message);
@@ -281,7 +281,7 @@ router.get('/posts-history', auth, async (req, res) => {
         SELECT p.*, COUNT(c.id) as comments_count
         FROM posts p
         LEFT JOIN comments c ON c.post_id = p.id
-        WHERE p.user_id = ?
+        WHERE p.user_id = $1
         GROUP BY p.id
         ORDER BY p.created_at DESC
       `).all(req.user.id);
@@ -294,7 +294,7 @@ router.get('/posts-history', auth, async (req, res) => {
       try {
         console.log('🔄 Tentative requête posts sans comments...');
         const posts = await req.db.prepare(`
-          SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC
+          SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC
         `).all(req.user.id);
         
         console.log('✅ Posts trouvés (sans comments):', posts.length);
@@ -321,12 +321,12 @@ router.get('/:id', auth, async (req, res) => {
     let user;
     try {
       user = await req.db.prepare(
-        'SELECT id, name, avatar_url, badge, created_at, streak_days, total_hours, church FROM users WHERE id = ?'
+        'SELECT id, name, avatar_url, badge, created_at, streak_days, total_hours, church FROM users WHERE id = $1'
       ).get(userId);
     } catch (e) {
       // Si le champ badge n'existe pas
       user = await req.db.prepare(
-        'SELECT id, name, avatar_url, created_at, streak_days, total_hours, church FROM users WHERE id = ?'
+        'SELECT id, name, avatar_url, created_at, streak_days, total_hours, church FROM users WHERE id = $1'
       ).get(userId);
       if (user) user.badge = null; // Ne pas écraser avec bronze
     }
@@ -337,14 +337,14 @@ router.get('/:id', auth, async (req, res) => {
 
     // Statistiques de l'utilisateur - compter chaque livre unique terminé une seule fois
     const booksCompleted = (await req.db.prepare(
-      'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+      'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = $1 AND progress_pct = 100'
     ).get(userId)).c;
 
     // Posts récents de l'utilisateur
     const recentPosts = await req.db.prepare(`
       SELECT id, content, type, likes_count, created_at
       FROM posts 
-      WHERE user_id = ? 
+      WHERE user_id = $1 
       ORDER BY created_at DESC 
       LIMIT 5
     `).all(userId);
@@ -375,7 +375,7 @@ router.get('/saved-books', auth, async (req, res) => {
   const books = await req.db.prepare(`
     SELECT b.* FROM saved_books sb
     JOIN books b ON b.id = sb.book_id
-    WHERE sb.user_id = ?
+    WHERE sb.user_id = $1
     ORDER BY sb.saved_at DESC
   `).all(req.user.id);
   res.json(books);
@@ -387,7 +387,7 @@ router.get('/reading', auth, async (req, res) => {
     SELECT b.*, rs.progress_pct, rs.updated_at
     FROM reading_sessions rs
     JOIN books b ON b.id = rs.book_id
-    WHERE rs.user_id = ? AND rs.progress_pct < 100
+    WHERE rs.user_id = $1 AND rs.progress_pct < 100
     ORDER BY rs.updated_at DESC
   `).all(req.user.id);
   res.json(sessions);
@@ -409,7 +409,7 @@ router.get('/posts-history', auth, async (req, res) => {
     }
     
     try {
-      const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(req.user.id);
+      const userPosts = await req.db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = $1').get(req.user.id);
       console.log('👤 Posts pour cet utilisateur:', userPosts);
     } catch (e) {
       console.error('❌ Erreur COUNT user posts:', e.message);
@@ -423,7 +423,7 @@ router.get('/posts-history', auth, async (req, res) => {
         SELECT p.*, COUNT(c.id) as comments_count
         FROM posts p
         LEFT JOIN comments c ON c.post_id = p.id
-        WHERE p.user_id = ?
+        WHERE p.user_id = $1
         GROUP BY p.id
         ORDER BY p.created_at DESC
       `).all(req.user.id);
@@ -436,7 +436,7 @@ router.get('/posts-history', auth, async (req, res) => {
       try {
         console.log('🔄 Tentative requête posts sans comments...');
         const posts = await req.db.prepare(`
-          SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC
+          SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC
         `).all(req.user.id);
         
         console.log('✅ Posts trouvés (sans comments):', posts.length);
@@ -458,12 +458,12 @@ router.patch('/me', auth, async (req, res) => {
   if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
 
   const updates = [];
-  updates.push('name = ?');
+  updates.push('name = $1');
   if (church !== undefined) {
-    updates.push('church = ?');
+    updates.push('church = $2');
   }
 
-  await req.db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(
+  await req.db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = $3`).run(
     ...[name.trim(), ...(church !== undefined ? [church.trim()] : []), req.user.id]
   );
   res.json({ success: true });
@@ -479,14 +479,14 @@ router.patch('/password', auth, async (req, res) => {
     return res.status(400).json({ error: 'New password must be at least 6 characters' });
   }
 
-  const user = await req.db.prepare('SELECT id, password FROM users WHERE id = ?').get(req.user.id);
+  const user = await req.db.prepare('SELECT id, password FROM users WHERE id = $1').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (!bcrypt.compareSync(currentPassword, user.password)) {
     return res.status(400).json({ error: 'Current password is incorrect' });
   }
 
   const hash = bcrypt.hashSync(newPassword, 10);
-  await req.db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, req.user.id);
+  await req.db.prepare('UPDATE users SET password = $1 WHERE id = $2').run(hash, req.user.id);
   res.json({ success: true });
 });
 
@@ -514,7 +514,7 @@ router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-  await req.db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, req.user.id);
+  await req.db.prepare('UPDATE users SET avatar_url = $1 WHERE id = $2').run(avatarUrl, req.user.id);
   
   res.json({ success: true, avatar_url: avatarUrl });
 });
