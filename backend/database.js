@@ -261,6 +261,16 @@ async function ensureSchema(db) {
       // Le champ existe déjà, ignorer l'erreur
     }
 
+    // Migration pour ajouter le champ church s'il n'existe pas (PostgreSQL)
+    try {
+      console.log('🔄 Migration PostgreSQL: ajout du champ church...');
+      await db.exec(`ALTER TABLE users ADD COLUMN church TEXT`);
+      console.log('✅ Champ church ajouté avec succès');
+    } catch (e) {
+      console.log('ℹ️ Champ church déjà existant ou erreur:', e.message);
+      // Le champ existe déjà, ignorer l'erreur
+    }
+
     await db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id          SERIAL PRIMARY KEY,
