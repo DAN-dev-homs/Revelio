@@ -211,14 +211,20 @@ const App = (() => {
 
   /** Charge et affiche une page */
   async function loadPage(page, params) {
+    console.log('🔄 Chargement de la page:', page, params);
+    
     const el = document.getElementById(`page-${page}`);
-    if (!el) return;
+    if (!el) {
+      console.error('❌ Élément de page non trouvé:', `page-${page}`);
+      return;
+    }
 
     el.innerHTML = `<div class="flex items-center justify-center" style="min-height:60vh">
       <div class="spinner"></div></div>`;
     el.classList.add('active');
 
     try {
+      console.log('📋 Rendu de la page:', page);
       switch (page) {
         case 'home':        await HomePage.render(el);      break;
         case 'explore':     await ExplorePage.render(el);   break;
@@ -226,13 +232,26 @@ const App = (() => {
         case 'profile':     await ProfilePage.render(el);   break;
         case 'book-detail': await BookDetailPage.render(el, params.id); break;
         case 'public-profile': await PublicProfilePage.render(el, params.id); break;
+        default:
+          console.warn('⚠️ Page non gérée:', page);
+          throw new Error('Page non trouvée');
       }
+      console.log('✅ Page chargée avec succès:', page);
     } catch (err) {
+      console.error('💥 Erreur lors du chargement de la page:', page, err);
       el.innerHTML = `<div class="empty-state">
-        <p data-i18n="common.error">${i18n.t('common.error')}</p>
-        <button class="btn-primary" style="margin-top:16px" onclick="App.navigateTo('${page}')">
-          ${i18n.t('common.retry')}
-        </button>
+        <div style="text-align: center; padding: 40px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+          <h3 style="margin-bottom: 8px;">Erreur de chargement</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 16px;">Impossible de charger la page "${page}".</p>
+          <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Détail: ${err.message}</p>
+          <button class="btn-primary" style="margin-top:16px" onclick="App.navigateTo('${page}')">
+            ${i18n.t('common.retry')}
+          </button>
+          <button class="btn-secondary" style="margin-left: 8px" onclick="App.navigateTo('home')">
+            Accueil
+          </button>
+        </div>
       </div>`;
     }
   }
