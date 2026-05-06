@@ -457,15 +457,11 @@ router.patch('/me', auth, async (req, res) => {
   const { name, church } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
 
-  const updates = [];
-  updates.push('name = $1');
   if (church !== undefined) {
-    updates.push('church = $2');
+    await req.db.prepare('UPDATE users SET name = $1, church = $2 WHERE id = $3').run(name.trim(), church.trim(), req.user.id);
+  } else {
+    await req.db.prepare('UPDATE users SET name = $1 WHERE id = $2').run(name.trim(), req.user.id);
   }
-
-  await req.db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = $3`).run(
-    ...[name.trim(), ...(church !== undefined ? [church.trim()] : []), req.user.id]
-  );
   res.json({ success: true });
 });
 
