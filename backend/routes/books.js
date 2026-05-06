@@ -5,21 +5,32 @@ const router = require('express').Router();
 const { auth } = require('../middleware/auth');
 
 async function updateUserBadge(db, userId) {
+  // Vérifier si l'utilisateur a déjà un badge manuel (attribué par l'admin)
+  const user = await db.prepare('SELECT badge FROM users WHERE id = ?').get(userId);
+  
+  // Si l'utilisateur a déjà un badge manuel, ne pas l'écraser
+  if (user && user.badge) {
+    console.log('🏆 Badge manuel détecté, pas de mise à jour automatique:', user.badge);
+    return;
+  }
+
+  // Sinon, calculer le badge automatiquement
   const booksCompleted = (await db.prepare(
-    'SELECT COUNT(*) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
+    'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
   ).get(userId)).c;
 
   let newBadge = 'bronze';
-  if (booksCompleted >= 10000) {
+  if (booksCompleted >= 200) {
     newBadge = 'diamond';
-  } else if (booksCompleted >= 1000) {
-    newBadge = 'gold';
   } else if (booksCompleted >= 100) {
+    newBadge = 'gold';
+  } else if (booksCompleted >= 30) {
     newBadge = 'silver';
   }
 
   try {
     await db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(newBadge, userId);
+    console.log('🏆 Badge automatique mis à jour:', newBadge, 'pour', booksCompleted, 'livres');
   } catch (e) {
     // Si le champ badge n'existe pas, ignorer silencieusement
     console.log('Badge field not found, skipping badge update');
