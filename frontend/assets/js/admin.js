@@ -185,6 +185,11 @@ async function loadMonitoring() {
     // Afficher les meilleurs lecteurs
     renderTopReaders(d.topReaders.week, 'top-readers-week');
     renderTopReaders(d.topReaders.month, 'top-readers-month');
+
+    // Afficher les livres populaires
+    renderTopBooks(d.topBooks.mostRead, 'most-read-books', 'readers');
+    renderTopBooks(d.topBooks.mostSaved, 'most-saved-books', 'saves');
+    renderTopBooks(d.topBooks.mostLiked, 'most-liked-books', 'likes');
   } catch (e) {
     container.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
   }
@@ -217,6 +222,39 @@ function renderTopReaders(readers, containerId) {
           <div style="font-size:12px;color:var(--muted);">${reader.books_read} livres · ${Math.round(reader.total_progress || 0)}% progression</div>
         </div>
         ${badgeIcon ? `<span style="font-size:16px;">${badgeIcon}</span>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTopBooks(books, containerId, countField) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!books || books.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:13px;">Aucune donnée disponible.</p>';
+    return;
+  }
+
+  container.innerHTML = books.map((book, index) => {
+    const count = book[countField] || 0;
+    const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+    const coverStyle = book.cover_url
+      ? `background-image: url('${book.cover_url}'); background-size: cover; background-position: center;`
+      : `background: ${book.cover_color || '#4CAF93'};`;
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">
+          ${rankIcon}
+        </div>
+        <div style="width:36px;height:48px;border-radius:6px;${coverStyle}display:flex;align-items:center;justify-content:center;">
+          ${!book.cover_url ? '<span style="font-size:16px;">📖</span>' : ''}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:500;">${book.title}</div>
+          <div style="font-size:12px;color:var(--muted);">${book.author}</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--primary);">${count}</div>
       </div>
     `;
   }).join('');

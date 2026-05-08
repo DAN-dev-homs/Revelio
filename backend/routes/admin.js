@@ -95,6 +95,40 @@ router.get('/stats', async (req, res) => {
     ORDER BY created_at DESC LIMIT 5
   `).all();
 
+  // Livres les plus lus (basé sur reading_sessions)
+  const mostReadBooks = await db.prepare(`
+    SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
+           COUNT(DISTINCT rs.user_id) as readers_count,
+           AVG(rs.progress_pct) as avg_progress
+    FROM books b
+    LEFT JOIN reading_sessions rs ON b.id = rs.book_id
+    GROUP BY b.id
+    ORDER BY readers_count DESC
+    LIMIT 10
+  `).all();
+
+  // Livres les plus sauvegardés
+  const mostSavedBooks = await db.prepare(`
+    SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
+           COUNT(DISTINCT sb.user_id) as saves_count
+    FROM books b
+    LEFT JOIN saved_books sb ON b.id = sb.book_id
+    GROUP BY b.id
+    ORDER BY saves_count DESC
+    LIMIT 10
+  `).all();
+
+  // Livres les plus likés (basé sur les posts qui mentionnent des livres)
+  const mostLikedBooks = await db.prepare(`
+    SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
+           SUM(p.likes_count) as total_likes
+    FROM books b
+    LEFT JOIN posts p ON p.book_id = b.id
+    GROUP BY b.id
+    ORDER BY total_likes DESC
+    LIMIT 10
+  `).all();
+
   res.json({
     users: { total: totalUsers, admins: totalAdmins, regular: totalUsers - totalAdmins, newThisMonth: newUsersMonth },
     books: { total: totalBooks, withVideo: booksWithVideo, withAudio: booksWithAudio },
@@ -104,6 +138,11 @@ router.get('/stats', async (req, res) => {
     topReaders: {
       week: topReadersWeek,
       month: topReadersMonth
+    },
+    topBooks: {
+      mostRead: mostReadBooks,
+      mostSaved: mostSavedBooks,
+      mostLiked: mostLikedBooks
     }
   });
 });

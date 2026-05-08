@@ -172,8 +172,7 @@ const CommunityPage = (() => {
       ? `<img src="${user.avatar_url}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`
       : initials;
     
-    const badgeIcon = user.badge ? {
-      bronze: '🥉',
+    const badgeIcon = user.badge && user.badge !== 'bronze' ? {
       silver: '🥈',
       gold: '🥇',
       diamond: '💎'
@@ -404,8 +403,7 @@ const CommunityPage = (() => {
       : i18n.t('community.thought');
     
     // Badge de l'auteur
-    const badgeIcon = post.author_badge ? {
-      bronze: '🥉',
+    const badgeIcon = post.author_badge && post.author_badge !== 'bronze' ? {
       silver: '🥈',
       gold: '🥇',
       diamond: '💎'
