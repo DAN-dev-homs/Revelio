@@ -26,6 +26,7 @@ const HomePage = (() => {
           </p>
         </div>
         <div class="flex gap-sm items-center">
+          <a href="/about.html" style="color:var(--accent-red);font-size:13px;text-decoration:none;font-weight:500;">Qui Sommes-Nous ?</a>
           <div class="notif-badge">
             <button class="icon-btn" id="notif-btn" aria-label="Notifications">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"

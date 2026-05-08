@@ -304,6 +304,7 @@ const App = (() => {
             style="width:88px;height:88px;object-fit:contain;margin:0 auto 12px;">
           <h1 style="font-size:28px;font-weight:700;margin-bottom:6px;">Revelio</h1>
           <p style="color:var(--text-secondary);font-size:14px;">Votre parcours spirituel commence ici</p>
+          <a href="/about.html" style="display:inline-block;margin-top:8px;color:var(--accent-red);font-size:13px;text-decoration:none;">Qui Sommes-Nous ?</a>
         </div>
 
         <!-- Onglets -->
