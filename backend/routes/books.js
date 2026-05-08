@@ -80,20 +80,26 @@ router.get('/', auth, async (req, res) => {
 
 // GET /api/books/:id — détail
 router.get('/:id', auth, async (req, res) => {
-  const book = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
+  const bookId = req.params.id;
+  const userId = req.user.id;
+
+  if (!bookId) return res.status(400).json({ error: 'book_id required' });
+  if (!userId) return res.status(401).json({ error: 'user not authenticated' });
+
+  const book = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
   if (!book) return res.status(404).json({ error: 'Book not found' });
 
   const session = await req.db.prepare(
     'SELECT * FROM reading_sessions WHERE user_id = ? AND book_id = ?'
-  ).get(req.user.id, req.params.id);
+  ).get(userId, bookId);
 
   const saved = await req.db.prepare(
     'SELECT id FROM saved_books WHERE user_id = ? AND book_id = ?'
-  ).get(req.user.id, req.params.id);
+  ).get(userId, bookId);
 
-  const tags = await req.db.prepare('SELECT type, name FROM book_tags WHERE book_id = ?').all(req.params.id);
-  const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(req.params.id)).count;
-  const isLiked = !!(await req.db.prepare('SELECT id FROM book_likes WHERE user_id = ? AND book_id = ?').get(req.user.id, req.params.id));
+  const tags = await req.db.prepare('SELECT type, name FROM book_tags WHERE book_id = ?').all(bookId);
+  const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(bookId)).count;
+  const isLiked = !!(await req.db.prepare('SELECT id FROM book_likes WHERE user_id = ? AND book_id = ?').get(userId, bookId));
 
   if (book.key_points) {
     try { book.key_points = JSON.parse(book.key_points); } catch(e) {}
@@ -109,36 +115,46 @@ router.get('/:id', auth, async (req, res) => {
   });
 });
 
-// POST /api/books/:id/like — toggle like on a book
+// POST /api/books/:id/like — like/unlike
 router.post('/:id/like', auth, async (req, res) => {
-  const { id } = req.params;
+  const bookId = req.params.id;
+  const userId = req.user.id;
+
+  if (!bookId) return res.status(400).json({ error: 'book_id required' });
+  if (!userId) return res.status(401).json({ error: 'user not authenticated' });
+
   const existing = await req.db.prepare(
     'SELECT id FROM book_likes WHERE user_id = ? AND book_id = ?'
-  ).get(req.user.id, id);
+  ).get(userId, bookId);
 
   if (existing) {
-    await req.db.prepare('DELETE FROM book_likes WHERE user_id = ? AND book_id = ?').run(req.user.id, id);
-    const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(id)).count;
+    await req.db.prepare('DELETE FROM book_likes WHERE user_id = ? AND book_id = ?').run(userId, bookId);
+    const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(bookId)).count;
     res.json({ liked: false, likes_count: likesCount });
   } else {
-    await req.db.prepare('INSERT INTO book_likes (user_id, book_id) VALUES (?, ?)').run(req.user.id, id);
-    const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(id)).count;
+    await req.db.prepare('INSERT INTO book_likes (user_id, book_id) VALUES (?, ?)').run(userId, bookId);
+    const likesCount = (await req.db.prepare('SELECT COUNT(*) as count FROM book_likes WHERE book_id = ?').get(bookId)).count;
     res.json({ liked: true, likes_count: likesCount });
   }
 });
 
 // POST /api/books/:id/save — toggle save
 router.post('/:id/save', auth, async (req, res) => {
-  const { id } = req.params;
+  const bookId = req.params.id;
+  const userId = req.user.id;
+
+  if (!bookId) return res.status(400).json({ error: 'book_id required' });
+  if (!userId) return res.status(401).json({ error: 'user not authenticated' });
+
   const existing = await req.db.prepare(
     'SELECT id FROM saved_books WHERE user_id = ? AND book_id = ?'
-  ).get(req.user.id, id);
+  ).get(userId, bookId);
 
   if (existing) {
-    await req.db.prepare('DELETE FROM saved_books WHERE user_id = ? AND book_id = ?').run(req.user.id, id);
+    await req.db.prepare('DELETE FROM saved_books WHERE user_id = ? AND book_id = ?').run(userId, bookId);
     res.json({ saved: false });
   } else {
-    await req.db.prepare('INSERT INTO saved_books (user_id, book_id) VALUES (?, ?)').run(req.user.id, id);
+    await req.db.prepare('INSERT INTO saved_books (user_id, book_id) VALUES (?, ?)').run(userId, bookId);
     res.json({ saved: true });
   }
 });
@@ -203,18 +219,23 @@ router.patch('/:id/progress', auth, async (req, res) => {
 // DELETE /api/books/:id/save — supprimer un livre sauvegardé
 router.delete('/:id/save', auth, async (req, res) => {
   try {
+    const bookId = req.params.id;
+    const userId = req.user.id;
+
+    if (!bookId) return res.status(400).json({ error: 'book_id required' });
+    if (!userId) return res.status(401).json({ error: 'user not authenticated' });
+
     const result = await req.db.prepare(
       'DELETE FROM saved_books WHERE user_id = ? AND book_id = ?'
-    ).run(req.user.id, req.params.id);
-    
+    ).run(userId, bookId);
+
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Book not found in saved books' });
     }
-    
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error unsaving book:', error);
-    res.status(500).json({ error: 'Failed to unsave book' });
+  } catch (e) {
+    console.error('Error deleting saved book:', e);
+    res.status(500).json({ error: 'Failed to delete saved book' });
   }
 });
 
