@@ -209,6 +209,37 @@ async function ensureSchema(db) {
         created_at  TEXT    DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS team_members (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT    NOT NULL,
+        role        TEXT    NOT NULL,
+        photo_url   TEXT,
+        bio         TEXT,
+        linkedin    TEXT,
+        twitter     TEXT,
+        order_index INTEGER DEFAULT 0,
+        created_at  TEXT    DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS partners (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT    NOT NULL,
+        logo_url    TEXT,
+        website_url TEXT,
+        description TEXT,
+        order_index INTEGER DEFAULT 0,
+        created_at  TEXT    DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT    NOT NULL,
+        email       TEXT    NOT NULL,
+        message     TEXT    NOT NULL,
+        is_read     INTEGER DEFAULT 0,
+        created_at  TEXT    DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS activity_log (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -392,6 +423,37 @@ async function ensureSchema(db) {
         user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         type        TEXT    NOT NULL,
         content     TEXT    NOT NULL,
+        is_read     INTEGER DEFAULT 0,
+        created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS team_members (
+        id          SERIAL PRIMARY KEY,
+        name        TEXT    NOT NULL,
+        role        TEXT    NOT NULL,
+        photo_url   TEXT,
+        bio         TEXT,
+        linkedin    TEXT,
+        twitter     TEXT,
+        order_index INTEGER DEFAULT 0,
+        created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS partners (
+        id          SERIAL PRIMARY KEY,
+        name        TEXT    NOT NULL,
+        logo_url    TEXT,
+        website_url TEXT,
+        description TEXT,
+        order_index INTEGER DEFAULT 0,
+        created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id          SERIAL PRIMARY KEY,
+        name        TEXT    NOT NULL,
+        email       TEXT    NOT NULL,
+        message     TEXT    NOT NULL,
         is_read     INTEGER DEFAULT 0,
         created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );

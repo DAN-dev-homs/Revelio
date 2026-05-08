@@ -33,6 +33,7 @@ async function start() {
   app.use('/api/profile',       require('./routes/profile'));
   app.use('/api/admin',         require('./routes/admin'));
   app.use('/api/notifications', require('./routes/notifications'));
+  app.use('/api/about',         require('./routes/about'));
 
   // ── SPA Fallback ─────────────────────────────────────────
   app.get('*', (_req, res) => {

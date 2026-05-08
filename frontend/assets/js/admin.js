@@ -93,6 +93,11 @@ function showTab(name) {
   document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`).classList.add('active');
+  
+  // Charger les données appropriées pour chaque onglet
+  if (name === 'team') loadTeam();
+  if (name === 'partners') loadPartners();
+  if (name === 'contact') loadContactMessages();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -705,3 +710,282 @@ function closeModal(id) { document.getElementById(id).classList.remove('active')
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('overlay')) e.target.classList.remove('active');
 });
+
+// ══════════════════════════════════════════════════════════
+// ── GESTION DE L'ÉQUIPE ──────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+
+async function loadTeam() {
+  const tbody = document.getElementById('team-table-body');
+  try {
+    const team = await apiFetch('GET', '/admin/team');
+    tbody.innerHTML = team.map(member => `
+      <tr>
+        <td>
+          ${member.photo_url 
+            ? `<img src="${member.photo_url}" alt="${member.name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` 
+            : `<div style="width:40px;height:40px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;">${member.name[0]}</div>`
+          }
+        </td>
+        <td>${member.name}</td>
+        <td>${member.role}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="editTeamMember(${member.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTeamMember(${member.id}, '${member.name.replace(/'/g, "\\'")}')">✕</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);">Erreur: ${e.message}</td></tr>`;
+  }
+}
+
+function openTeamModal(member = null) {
+  const modal = document.getElementById('modal-team');
+  const title = document.getElementById('team-modal-title');
+  
+  if (member) {
+    title.textContent = 'Modifier le membre d\'équipe';
+    document.getElementById('team-id').value = member.id;
+    document.getElementById('team-name').value = member.name;
+    document.getElementById('team-role').value = member.role;
+    document.getElementById('team-bio').value = member.bio || '';
+    document.getElementById('team-linkedin').value = member.linkedin || '';
+    document.getElementById('team-twitter').value = member.twitter || '';
+    document.getElementById('team-order').value = member.order_index || 0;
+    document.getElementById('team-existing-photo').value = member.photo_url || '';
+  } else {
+    title.textContent = 'Ajouter un membre d\'équipe';
+    document.getElementById('team-id').value = '';
+    document.getElementById('team-name').value = '';
+    document.getElementById('team-role').value = '';
+    document.getElementById('team-bio').value = '';
+    document.getElementById('team-linkedin').value = '';
+    document.getElementById('team-twitter').value = '';
+    document.getElementById('team-order').value = 0;
+    document.getElementById('team-existing-photo').value = '';
+    document.getElementById('team-photo').value = '';
+  }
+  
+  modal.classList.add('active');
+}
+
+function editTeamMember(id) {
+  apiFetch('GET', '/admin/team').then(team => {
+    const member = team.find(m => m.id === id);
+    if (member) openTeamModal(member);
+  });
+}
+
+async function saveTeamMember() {
+  const id = document.getElementById('team-id').value;
+  const name = document.getElementById('team-name').value;
+  const role = document.getElementById('team-role').value;
+  const bio = document.getElementById('team-bio').value;
+  const linkedin = document.getElementById('team-linkedin').value;
+  const twitter = document.getElementById('team-twitter').value;
+  const order = document.getElementById('team-order').value;
+  const photo = document.getElementById('team-photo').files[0];
+  const existingPhoto = document.getElementById('team-existing-photo').value;
+  
+  if (!name || !role) {
+    alert('Nom et rôle sont requis');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('role', role);
+  formData.append('bio', bio);
+  formData.append('linkedin', linkedin);
+  formData.append('twitter', twitter);
+  formData.append('order_index', order);
+  formData.append('existing_photo', existingPhoto);
+  if (photo) formData.append('photo', photo);
+  
+  try {
+    const endpoint = id ? `/admin/team/${id}` : '/admin/team';
+    const method = id ? 'PUT' : 'POST';
+    
+    const response = await fetch(endpoint, {
+      method,
+      body: formData
+    });
+    
+    if (!response.ok) throw new Error('Erreur lors de l\'enregistrement');
+    
+    closeModal('modal-team');
+    loadTeam();
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+}
+
+async function deleteTeamMember(id, name) {
+  if (!confirm(`Supprimer ${name} ?`)) return;
+  
+  try {
+    await apiFetch('DELETE', `/admin/team/${id}`);
+    loadTeam();
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ── GESTION DES PARTENAIRES ────────────────────────────────
+// ══════════════════════════════════════════════════════════
+
+async function loadPartners() {
+  const tbody = document.getElementById('partners-table-body');
+  try {
+    const partners = await apiFetch('GET', '/admin/partners');
+    tbody.innerHTML = partners.map(partner => `
+      <tr>
+        <td>
+          ${partner.logo_url 
+            ? `<img src="${partner.logo_url}" alt="${partner.name}" style="width:50px;height:30px;object-fit:contain;">` 
+            : '<span style="color:var(--muted);">Pas de logo</span>'
+          }
+        </td>
+        <td>${partner.name}</td>
+        <td>${partner.website_url ? `<a href="${partner.website_url}" target="_blank">${partner.website_url}</a>` : '-'}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="editPartner(${partner.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePartner(${partner.id}, '${partner.name.replace(/'/g, "\\'")}')">✕</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);">Erreur: ${e.message}</td></tr>`;
+  }
+}
+
+function openPartnerModal(partner = null) {
+  const modal = document.getElementById('modal-partner');
+  const title = document.getElementById('partner-modal-title');
+  
+  if (partner) {
+    title.textContent = 'Modifier le partenaire';
+    document.getElementById('partner-id').value = partner.id;
+    document.getElementById('partner-name').value = partner.name;
+    document.getElementById('partner-website').value = partner.website_url || '';
+    document.getElementById('partner-description').value = partner.description || '';
+    document.getElementById('partner-order').value = partner.order_index || 0;
+    document.getElementById('partner-existing-logo').value = partner.logo_url || '';
+  } else {
+    title.textContent = 'Ajouter un partenaire';
+    document.getElementById('partner-id').value = '';
+    document.getElementById('partner-name').value = '';
+    document.getElementById('partner-website').value = '';
+    document.getElementById('partner-description').value = '';
+    document.getElementById('partner-order').value = 0;
+    document.getElementById('partner-existing-logo').value = '';
+    document.getElementById('partner-logo').value = '';
+  }
+  
+  modal.classList.add('active');
+}
+
+function editPartner(id) {
+  apiFetch('GET', '/admin/partners').then(partners => {
+    const partner = partners.find(p => p.id === id);
+    if (partner) openPartnerModal(partner);
+  });
+}
+
+async function savePartner() {
+  const id = document.getElementById('partner-id').value;
+  const name = document.getElementById('partner-name').value;
+  const website = document.getElementById('partner-website').value;
+  const description = document.getElementById('partner-description').value;
+  const order = document.getElementById('partner-order').value;
+  const logo = document.getElementById('partner-logo').files[0];
+  const existingLogo = document.getElementById('partner-existing-logo').value;
+  
+  if (!name) {
+    alert('Nom est requis');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('website_url', website);
+  formData.append('description', description);
+  formData.append('order_index', order);
+  formData.append('existing_logo', existingLogo);
+  if (logo) formData.append('logo', logo);
+  
+  try {
+    const endpoint = id ? `/admin/partners/${id}` : '/admin/partners';
+    const method = id ? 'PUT' : 'POST';
+    
+    const response = await fetch(endpoint, {
+      method,
+      body: formData
+    });
+    
+    if (!response.ok) throw new Error('Erreur lors de l\'enregistrement');
+    
+    closeModal('modal-partner');
+    loadPartners();
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+}
+
+async function deletePartner(id, name) {
+  if (!confirm(`Supprimer ${name} ?`)) return;
+  
+  try {
+    await apiFetch('DELETE', `/admin/partners/${id}`);
+    loadPartners();
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ── MESSAGES DE CONTACT ────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+
+async function loadContactMessages() {
+  const tbody = document.getElementById('contact-table-body');
+  try {
+    const messages = await apiFetch('GET', '/admin/contact-messages');
+    tbody.innerHTML = messages.map(msg => `
+      <tr style="${msg.is_read ? 'opacity:0.6;' : ''}">
+        <td>${new Date(msg.created_at).toLocaleDateString('fr-FR')}</td>
+        <td>${msg.name}</td>
+        <td>${msg.email}</td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${msg.message}</td>
+        <td>
+          ${!msg.is_read ? `<button class="btn btn-ghost btn-sm" onclick="markAsRead(${msg.id})">✓</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteContactMessage(${msg.id})">✕</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Erreur: ${e.message}</td></tr>`;
+  }
+}
+
+async function markAsRead(id) {
+  try {
+    await apiFetch('PATCH', `/admin/contact-messages/${id}/read`);
+    loadContactMessages();
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+}
+
+async function deleteContactMessage(id) {
+  if (!confirm('Supprimer ce message ?')) return;
+  
+  try {
+    await apiFetch('DELETE', `/admin/contact-messages/${id}`);
+    loadContactMessages();
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+}

@@ -573,4 +573,173 @@ router.delete('/posts/:id', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════
+// ── GESTION DE L'ÉQUIPE ────────────────────────────────
+// ═══════════════════════════════════════════════════════
+
+router.get('/team', isAdmin, async (req, res) => {
+  try {
+    const team = await req.db.prepare('SELECT * FROM team_members ORDER BY order_index ASC').all();
+    res.json(team);
+  } catch (e) {
+    console.error('Error fetching team:', e);
+    res.status(500).json({ error: 'Failed to fetch team' });
+  }
+});
+
+router.post('/team', isAdmin, upload.single('photo'), async (req, res) => {
+  try {
+    const { name, role, bio, linkedin, twitter, order_index } = req.body;
+    const photo_url = req.file ? `/uploads/media/${req.file.filename}` : null;
+    
+    await req.db.prepare(
+      'INSERT INTO team_members (name, role, photo_url, bio, linkedin, twitter, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, role, photo_url, bio, linkedin, twitter, order_index || 0);
+    
+    await logActivity(req.db, req.user.id, 'create_team_member', `Added team member: ${name}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error adding team member:', e);
+    res.status(500).json({ error: 'Failed to add team member' });
+  }
+});
+
+router.put('/team/:id', isAdmin, upload.single('photo'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, role, bio, linkedin, twitter, order_index } = req.body;
+    const photo_url = req.file ? `/uploads/media/${req.file.filename}` : req.body.existing_photo;
+    
+    await req.db.prepare(
+      'UPDATE team_members SET name = ?, role = ?, photo_url = ?, bio = ?, linkedin = ?, twitter = ?, order_index = ? WHERE id = ?'
+    ).run(name, role, photo_url, bio, linkedin, twitter, order_index || 0, id);
+    
+    await logActivity(req.db, req.user.id, 'update_team_member', `Updated team member: ${name}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error updating team member:', e);
+    res.status(500).json({ error: 'Failed to update team member' });
+  }
+});
+
+router.delete('/team/:id', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await req.db.prepare('DELETE FROM team_members WHERE id = ?').run(id);
+    
+    await logActivity(req.db, req.user.id, 'delete_team_member', `Deleted team member ID: ${id}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error deleting team member:', e);
+    res.status(500).json({ error: 'Failed to delete team member' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// ── GESTION DES PARTENAIRES ────────────────────────────
+// ═══════════════════════════════════════════════════════
+
+router.get('/partners', isAdmin, async (req, res) => {
+  try {
+    const partners = await req.db.prepare('SELECT * FROM partners ORDER BY order_index ASC').all();
+    res.json(partners);
+  } catch (e) {
+    console.error('Error fetching partners:', e);
+    res.status(500).json({ error: 'Failed to fetch partners' });
+  }
+});
+
+router.post('/partners', isAdmin, upload.single('logo'), async (req, res) => {
+  try {
+    const { name, website_url, description, order_index } = req.body;
+    const logo_url = req.file ? `/uploads/media/${req.file.filename}` : null;
+    
+    await req.db.prepare(
+      'INSERT INTO partners (name, logo_url, website_url, description, order_index) VALUES (?, ?, ?, ?, ?)'
+    ).run(name, logo_url, website_url, description, order_index || 0);
+    
+    await logActivity(req.db, req.user.id, 'create_partner', `Added partner: ${name}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error adding partner:', e);
+    res.status(500).json({ error: 'Failed to add partner' });
+  }
+});
+
+router.put('/partners/:id', isAdmin, upload.single('logo'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, website_url, description, order_index } = req.body;
+    const logo_url = req.file ? `/uploads/media/${req.file.filename}` : req.body.existing_logo;
+    
+    await req.db.prepare(
+      'UPDATE partners SET name = ?, logo_url = ?, website_url = ?, description = ?, order_index = ? WHERE id = ?'
+    ).run(name, logo_url, website_url, description, order_index || 0, id);
+    
+    await logActivity(req.db, req.user.id, 'update_partner', `Updated partner: ${name}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error updating partner:', e);
+    res.status(500).json({ error: 'Failed to update partner' });
+  }
+});
+
+router.delete('/partners/:id', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await req.db.prepare('DELETE FROM partners WHERE id = ?').run(id);
+    
+    await logActivity(req.db, req.user.id, 'delete_partner', `Deleted partner ID: ${id}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error deleting partner:', e);
+    res.status(500).json({ error: 'Failed to delete partner' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// ── MESSAGES DE CONTACT ────────────────────────────────
+// ═══════════════════════════════════════════════════════
+
+router.get('/contact-messages', isAdmin, async (req, res) => {
+  try {
+    const messages = await req.db.prepare('SELECT * FROM contact_messages ORDER BY created_at DESC').all();
+    res.json(messages);
+  } catch (e) {
+    console.error('Error fetching contact messages:', e);
+    res.status(500).json({ error: 'Failed to fetch contact messages' });
+  }
+});
+
+router.patch('/contact-messages/:id/read', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await req.db.prepare('UPDATE contact_messages SET is_read = 1 WHERE id = ?').run(id);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error marking message as read:', e);
+    res.status(500).json({ error: 'Failed to mark message as read' });
+  }
+});
+
+router.delete('/contact-messages/:id', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await req.db.prepare('DELETE FROM contact_messages WHERE id = ?').run(id);
+    
+    await logActivity(req.db, req.user.id, 'delete_contact_message', `Deleted contact message ID: ${id}`, req.ip);
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error deleting contact message:', e);
+    res.status(500).json({ error: 'Failed to delete contact message' });
+  }
+});
+
 module.exports = router;
