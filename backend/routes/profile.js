@@ -89,36 +89,11 @@ router.get('/me', auth, async (req, res) => {
       // Mettre à jour la base de données avec les nouvelles valeurs
       await req.db.prepare(`
         UPDATE users 
-        SET total_hours = $1, streak_days = COALESCE((
-          WITH RECURSIVE dates(d) AS (
-            SELECT CURRENT_DATE
-            UNION ALL
-            SELECT d - INTERVAL '1 day' FROM dates 
-            WHERE d > CURRENT_DATE - INTERVAL '30 days'
-          )
-          SELECT COUNT(*) - 1
-          FROM dates d
-          WHERE EXISTS (
-            SELECT 1 FROM reading_sessions rs 
-            WHERE rs.user_id = $2 AND DATE(rs.updated_at) = d
-          )
-          AND d NOT IN (
-            SELECT d FROM dates d2 
-            WHERE NOT EXISTS (
-              SELECT 1 FROM reading_sessions rs 
-              WHERE rs.user_id = $3 AND DATE(rs.updated_at) = d2
-            )
-            AND d2 < (
-              SELECT MAX(DATE(updated_at)) 
-              FROM reading_sessions 
-              WHERE user_id = $4 AND DATE(updated_at) <= d2
-            )
-          )
-        ), 0)
-        WHERE id = $5
-      `).run(totalHours, req.user.id, req.user.id, req.user.id, req.user.id);
+        SET total_hours = $1
+        WHERE id = $2
+      `).run(totalHours, req.user.id);
       
-      console.log('✅ Base de données mise à jour');
+      console.log('✅ Base de données mise à jour pour total_hours');
       
     } catch (e) {
       console.error('❌ Erreur calcul heures:', e);
@@ -128,35 +103,38 @@ router.get('/me', auth, async (req, res) => {
     // Calculer le streak actuel (jours consécutifs avec lecture)
     let streakDays = 0;
     try {
-      const streakResult = await req.db.prepare(`
-        WITH RECURSIVE dates(d) AS (
-          SELECT CURRENT_DATE
-          UNION ALL
-          SELECT d - INTERVAL '1 day' FROM dates 
-          WHERE d > CURRENT_DATE - INTERVAL '30 days'
-        )
-        SELECT COUNT(*) - 1 as streak
-        FROM dates d
-        WHERE EXISTS (
-          SELECT 1 FROM reading_sessions rs 
-          WHERE rs.user_id = $1 AND DATE(rs.updated_at) = d
-        )
-        AND d NOT IN (
-          SELECT d FROM dates d2 
-          WHERE NOT EXISTS (
-            SELECT 1 FROM reading_sessions rs 
-            WHERE rs.user_id = $2 AND DATE(rs.updated_at) = d2
-          )
-          AND d2 < (
-            SELECT MAX(DATE(updated_at)) 
-            FROM reading_sessions 
-            WHERE user_id = $3 AND DATE(updated_at) <= d2
-          )
-        )
-      `).get(req.user.id, req.user.id, req.user.id);
+      // Simplification: compter les jours consécutifs avec lecture depuis aujourd'hui
+      const today = new Date().toISOString().split('T')[0];
+      let currentDate = new Date(today);
+      let consecutiveDays = 0;
       
-      streakDays = streakResult?.streak || 0;
-      console.log('🔥 Streak calculé:', streakDays);
+      for (let i = 0; i < 30; i++) { // Vérifier jusqu'à 30 jours
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const hasActivity = await req.db.prepare(`
+          SELECT 1 FROM reading_sessions 
+          WHERE user_id = $1 AND DATE(updated_at) = $2 
+          LIMIT 1
+        `).get(req.user.id, dateStr);
+        
+        if (hasActivity) {
+          consecutiveDays++;
+          currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      
+      streakDays = consecutiveDays;
+      console.log('🔥 Streak calculé (simplifié):', streakDays);
+      
+      // Mettre à jour la base de données avec le nouveau streak
+      await req.db.prepare(`
+        UPDATE users 
+        SET streak_days = $1
+        WHERE id = $2
+      `).run(streakDays, req.user.id);
+      
+      console.log('✅ Base de données mise à jour pour streak_days');
     } catch (e) {
       console.error('❌ Erreur calcul streak:', e);
       streakDays = user.streak_days || 0;
