@@ -26,7 +26,6 @@ const HomePage = (() => {
           </p>
         </div>
         <div class="flex gap-sm items-center">
-          <a href="/about.html" style="color:var(--accent-red);font-size:13px;text-decoration:none;font-weight:500;">Qui Sommes-Nous ?</a>
           <div class="notif-badge">
             <button class="icon-btn" id="notif-btn" aria-label="Notifications">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -113,6 +112,30 @@ const HomePage = (() => {
           `).join('')}
         </div>
       ` : ''}
+
+      <!-- Qui Sommes-Nous Button -->
+      <div style="text-align: center; margin-top: var(--spacing-3xl); margin-bottom: var(--spacing-2xl); padding: var(--spacing-xl) 0;">
+        <a href="/about.html" style="
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 32px;
+          background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
+          color: white;
+          text-decoration: none;
+          border-radius: 30px;
+          font-weight: 600;
+          font-size: 15px;
+          box-shadow: 0 4px 20px rgba(220, 20, 60, 0.3);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 30px rgba(220, 20, 60, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(220, 20, 60, 0.3)';">
+          <span style="font-size: 18px;">✨</span>
+          Qui Sommes-Nous ?
+          <span style="font-size: 18px;">✨</span>
+        </a>
+      </div>
     `;
 
     // Recherche depuis home → redirect vers explore
