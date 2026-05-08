@@ -343,14 +343,57 @@ router.post('/users/:id/badge', async (req, res) => {
   // Convertir 'none' en null pour la base de données
   const badgeValue = badge === 'none' ? null : badge;
   await req.db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(badgeValue, userId);
-  
+
   await logActivity(req.db, req.user.id, 'grant_badge', `Granted ${badge} badge to user: ${user.email}`, req.ip);
-  
-  res.json({ 
-    success: true, 
+
+  res.json({
+    success: true,
     message: `Badge ${badge} accordé à ${user.name}`,
     user: { id: userId, name: user.name, email: user.email, badge: badge }
   });
+});
+
+// POST /api/admin/recalculate-badges — Recalculer tous les badges automatiquement
+router.post('/recalculate-badges', async (req, res) => {
+  try {
+    const users = await req.db.prepare('SELECT id FROM users').all();
+    let updatedCount = 0;
+
+    for (const user of users) {
+      // Compter les livres terminés pour cet utilisateur
+      const booksCompleted = (await req.db.prepare(`
+        SELECT COUNT(*) as c
+        FROM (
+          SELECT book_id, MAX(progress_pct) as max_progress
+          FROM reading_sessions
+          WHERE user_id = ?
+          GROUP BY book_id
+          HAVING MAX(progress_pct) = 100
+        ) AS completed_books
+      `).get(user.id)).c;
+
+      let newBadge = 'bronze';
+      if (booksCompleted >= 200) {
+        newBadge = 'diamond';
+      } else if (booksCompleted >= 100) {
+        newBadge = 'gold';
+      } else if (booksCompleted >= 30) {
+        newBadge = 'silver';
+      }
+
+      // Mettre à jour le badge seulement si l'utilisateur n'a pas de badge manuel
+      const currentUser = await req.db.prepare('SELECT badge FROM users WHERE id = ?').get(user.id);
+      if (currentUser && (!currentUser.badge || currentUser.badge === 'bronze')) {
+        await req.db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(newBadge, user.id);
+        updatedCount++;
+      }
+    }
+
+    res.json({ success: true, updatedCount });
+  } catch (e) {
+    console.error('Error recalculating badges:', e);
+    res.status(500).json({ error: 'Failed to recalculate badges' });
+  }
 });
 
 // GET /api/admin/posts — Lister tous les posts avec infos auteurs
