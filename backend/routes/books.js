@@ -15,9 +15,16 @@ async function updateUserBadge(db, userId) {
   }
 
   // Sinon, calculer le badge automatiquement
-  const booksCompleted = (await db.prepare(
-    'SELECT COUNT(DISTINCT book_id) as c FROM reading_sessions WHERE user_id = ? AND progress_pct = 100'
-  ).get(userId)).c;
+  const booksCompleted = (await db.prepare(`
+    SELECT COUNT(DISTINCT book_id) as c
+    FROM (
+      SELECT book_id, MAX(progress_pct) as max_progress
+      FROM reading_sessions
+      WHERE user_id = ?
+      GROUP BY book_id
+    ) AS book_progress
+    WHERE max_progress = 100
+  `).get(userId)).c;
 
   let newBadge = 'bronze';
   if (booksCompleted >= 200) {

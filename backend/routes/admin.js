@@ -329,18 +329,20 @@ router.delete('/users/:id', async (req, res) => {
 router.post('/users/:id/badge', async (req, res) => {
   const { badge } = req.body;
   const userId = parseInt(req.params.id);
-  
+
   if (!badge) return res.status(400).json({ error: 'Badge is required' });
-  
-  const validBadges = ['bronze', 'silver', 'gold', 'diamond'];
+
+  const validBadges = ['none', 'bronze', 'silver', 'gold', 'diamond'];
   if (!validBadges.includes(badge)) {
-    return res.status(400).json({ error: 'Invalid badge. Must be: bronze, silver, gold, or diamond' });
+    return res.status(400).json({ error: 'Invalid badge. Must be: none, bronze, silver, gold, or diamond' });
   }
 
   const user = await req.db.prepare('SELECT name, email, badge as current_badge FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
-  await req.db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(badge, userId);
+  // Convertir 'none' en null pour la base de données
+  const badgeValue = badge === 'none' ? null : badge;
+  await req.db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(badgeValue, userId);
   
   await logActivity(req.db, req.user.id, 'grant_badge', `Granted ${badge} badge to user: ${user.email}`, req.ip);
   
