@@ -4,50 +4,6 @@
 const router = require('express').Router();
 const { auth } = require('../middleware/auth');
 
-// GET /book/:id — Page publique pour un livre (pour le partage avec Open Graph)
-router.get('/:id', async (req, res) => {
-  try {
-    const book = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
-    if (!book) return res.status(404).send('Livre non trouvé');
-
-    const coverUrl = book.cover_url || `/api/books/${book.id}/cover`;
-    const siteUrl = `${req.protocol}://${req.get('host')}`;
-
-    res.send(`
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${book.title} — Revelio</title>
-  <meta name="description" content="${book.title} par ${book.author}. Découvrez ce livre sur Revelio.">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="book">
-  <meta property="og:title" content="${book.title} — Revelio">
-  <meta property="og:description" content="${book.title} par ${book.author}. Découvrez ce livre sur Revelio.">
-  <meta property="og:image" content="${siteUrl}${coverUrl}">
-  <meta property="og:url" content="${siteUrl}/book/${book.id}">
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${book.title} — Revelio">
-  <meta name="twitter:description" content="${book.title} par ${book.author}. Découvrez ce livre sur Revelio.">
-  <meta name="twitter:image" content="${siteUrl}${coverUrl}">
-  
-  <meta http-equiv="refresh" content="0;url=/">
-</head>
-<body>
-  <p>Redirection vers Revelio...</p>
-</body>
-</html>
-    `);
-  } catch (e) {
-    console.error('Error fetching book for sharing:', e);
-    res.status(500).send('Erreur serveur');
-  }
-});
-
 async function updateUserBadge(db, userId) {
   // Vérifier si l'utilisateur a déjà un badge manuel (attribué par l'admin)
   const user = await db.prepare('SELECT badge FROM users WHERE id = ?').get(userId);

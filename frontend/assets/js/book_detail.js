@@ -216,9 +216,8 @@ const BookDetailPage = (() => {
 
     // Partage
     container.querySelector('#book-share-btn').addEventListener('click', () => {
-      // Copier l'URL du livre pour le partage avec preview
-      const bookUrl = `${window.location.origin}/book/${b.id}`;
-      navigator.clipboard.writeText(bookUrl).then(() => {
+      // Simulation de copie de lien
+      navigator.clipboard.writeText(`Découvre ce résumé de ${b.title} sur Revelio !`).then(() => {
         alert('Lien copié dans le presse-papier !');
       });
     });
