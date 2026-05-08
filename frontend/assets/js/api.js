@@ -154,7 +154,7 @@ const api = (() => {
     getSavedBooks:  ()          => get('/profile/saved-books'),
     getReadingList: ()          => get('/profile/reading'),
     getPostsHistory: ()         => get('/profile/posts-history'),
-    updateProfile:  (name)      => patch('/profile/me', { name }),
+    updateProfile:  (name, church) => patch('/profile/me', { name, church }),
     updatePassword: (currentPassword, newPassword) => patch('/profile/password', { currentPassword, newPassword }),
     uploadAvatar:   async (file) => {
       const formData = new FormData();
