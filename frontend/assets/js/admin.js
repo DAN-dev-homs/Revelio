@@ -425,8 +425,7 @@ async function loadUsers(searchQuery = '') {
     const endpoint = searchQuery ? `/admin/users/search?q=${encodeURIComponent(searchQuery)}` : '/admin/users';
     const users = await apiFetch('GET', endpoint);
     tbody.innerHTML = users.map(u => {
-      const badgeIcon = u.badge ? {
-        bronze: '🥉',
+      const badgeIcon = u.badge && u.badge !== 'bronze' ? {
         silver: '🥈',
         gold: '🥇',
         diamond: '💎'
@@ -442,14 +441,16 @@ async function loadUsers(searchQuery = '') {
         <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
         <td style="font-size:12px;color:var(--muted);">${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
         <td>
-          <span class="badge badge-${u.badge || 'bronze'}" style="
+          ${u.badge && u.badge !== 'bronze' ? `
+          <span class="badge badge-${u.badge}" style="
             display: inline-flex;
             align-items: center;
             gap: 4px;
           ">
             ${badgeIcon}
-            <span>${u.badge || 'bronze'}</span>
+            <span>${u.badge}</span>
           </span>
+          ` : '<span style="color:var(--muted);font-size:12px;">-</span>'}
         </td>
         <td>
           <div class="actions">
