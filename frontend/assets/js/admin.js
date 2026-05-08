@@ -187,9 +187,9 @@ async function loadMonitoring() {
     renderTopReaders(d.topReaders.month, 'top-readers-month');
 
     // Afficher les livres populaires
-    renderTopBooks(d.topBooks.mostRead, 'most-read-books', 'readers');
-    renderTopBooks(d.topBooks.mostSaved, 'most-saved-books', 'saves');
-    renderTopBooks(d.topBooks.mostLiked, 'most-liked-books', 'likes');
+    renderTopBooks(d.topBooks.mostRead, 'most-read-books', 'readers_count');
+    renderTopBooks(d.topBooks.mostSaved, 'most-saved-books', 'saves_count');
+    renderTopBooks(d.topBooks.mostLiked, 'most-liked-books', 'total_likes');
   } catch (e) {
     container.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
   }
