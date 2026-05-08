@@ -14,6 +14,20 @@ window.addEventListener('DOMContentLoaded', () => {
     loadCategories();
     loadBooks();
     loadUsers();
+    loadNotificationUsers();
+  }
+
+  // Event listener pour le sélecteur de destinataire de notification
+  const recipientSelect = document.getElementById('notification-recipient');
+  if (recipientSelect) {
+    recipientSelect.addEventListener('change', (e) => {
+      const userGroup = document.getElementById('notification-user-group');
+      if (e.target.value === 'specific') {
+        userGroup.style.display = 'block';
+      } else {
+        userGroup.style.display = 'none';
+      }
+    });
   }
 });
 
@@ -561,6 +575,53 @@ async function deleteUser(id, name) {
   if (!confirm(`Supprimer l'utilisateur "${name}" ? Cette action est irréversible.`)) return;
   await apiFetch('DELETE', `/admin/users/${id}`);
   loadUsers(); loadMonitoring();
+}
+
+// ══════════════════════════════════════════════════════════
+// ── NOTIFICATIONS ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+async function loadNotificationUsers() {
+  try {
+    const users = await apiFetch('GET', '/admin/users');
+    const select = document.getElementById('notification-user');
+    select.innerHTML = '<option value="">Sélectionner un utilisateur...</option>';
+    users.forEach(u => {
+      select.innerHTML += `<option value="${u.id}">${u.name} (${u.email})</option>`;
+    });
+  } catch (e) {
+    console.error('Erreur lors du chargement des utilisateurs pour notifications:', e);
+  }
+}
+
+async function sendNotification() {
+  const recipient = document.getElementById('notification-recipient').value;
+  const userId = document.getElementById('notification-user').value;
+  const type = document.getElementById('notification-type').value;
+  const content = document.getElementById('notification-content').value.trim();
+  const alertEl = document.getElementById('notification-alert');
+
+  if (!content) {
+    alertEl.innerHTML = '<div class="alert alert-error">Le contenu de la notification est requis</div>';
+    return;
+  }
+
+  if (recipient === 'specific' && !userId) {
+    alertEl.innerHTML = '<div class="alert alert-error">Veuillez sélectionner un utilisateur</div>';
+    return;
+  }
+
+  try {
+    if (recipient === 'all') {
+      await apiFetch('POST', '/notifications/broadcast', { type, content });
+      alertEl.innerHTML = '<div class="alert alert-success">Notification envoyée à tous les utilisateurs</div>';
+    } else {
+      await apiFetch('POST', '/notifications/send', { user_id: parseInt(userId), type, content });
+      alertEl.innerHTML = '<div class="alert alert-success">Notification envoyée à l\'utilisateur</div>';
+    }
+    document.getElementById('notification-content').value = '';
+  } catch (e) {
+    alertEl.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
 }
 
 // ── Utils ─────────────────────────────────────────────────

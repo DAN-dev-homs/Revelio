@@ -6,6 +6,7 @@ const HomePage = (() => {
 
   async function render(container) {
     const user    = JSON.parse(localStorage.getItem('revelio_user') || '{}');
+    const profile = await api.getProfile().catch(() => ({ streak_days: 0 })); // Récupérer le profil à jour depuis l'API
     const reading = await api.getReadingList().catch(() => []);
     const notifsData = await api.getNotifications().catch(() => ({ unreadCount: 0 }));
     const allBooks = await api.getBooks().catch(() => []); // Fetch suggestions
@@ -13,7 +14,7 @@ const HomePage = (() => {
     const suggestions = [...allBooks].sort(() => 0.5 - Math.random()).slice(0, 5); // 5 suggestions aléatoires
 
     const firstName = user.name?.split(' ')[0] || 'Sarah';
-    const streak    = user.streak_days || 0;
+    const streak    = profile.streak_days || 0; // Utiliser le streak depuis l'API
     const unreadCount = notifsData.unreadCount || 0;
 
     container.innerHTML = `
