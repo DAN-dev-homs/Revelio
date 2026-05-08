@@ -90,9 +90,9 @@ const ProfilePage = (() => {
       </header>
 
       <!-- Carte profil -->
-      <div class="profile-header-card hover-lift">
-        <div class="profile-avatar tap-feedback" id="avatar-upload-btn" style="cursor:pointer; position:relative; overflow:hidden;">
-          ${profile.avatar_url 
+      <div class="profile-header-card hover-lift" style="background: linear-gradient(135deg, var(--surface2) 0%, var(--surface1) 100%); border: 1px solid var(--border-color);">
+        <div class="profile-avatar tap-feedback" id="avatar-upload-btn" style="cursor:pointer; position:relative; overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          ${profile.avatar_url
             ? `<img src="${profile.avatar_url}" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">`
             : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -124,47 +124,54 @@ const ProfilePage = (() => {
           <div class="profile-email">${profile.email}</div>
         </div>
         ${profile.church ? `
-          <div style="margin-top: 8px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border-left: 3px solid var(--primary);">
-            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Église</div>
-            <div style="font-weight: 500; color: var(--primary);">${profile.church}</div>
+          <div style="margin-top: 12px; padding: 10px 14px; background: linear-gradient(135deg, rgba(76, 175, 147, 0.1) 0%, rgba(76, 175, 147, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(76, 175, 147, 0.3);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width: 18px; height: 18px;">
+                <path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a2 2 0 012-2h4a2 2 0 012 2v9"/>
+              </svg>
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">Église</div>
+                <div style="font-weight: 600; color: var(--primary); font-size: 14px;">${profile.church}</div>
+              </div>
+            </div>
           </div>
         ` : ''}
       </div>
 
       <!-- Stats -->
       <div class="flex gap-md stagger-children" style="margin-bottom:var(--spacing-2xl)">
-        <div class="stat-card">
-          <div class="stat-icon-wrapper">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--surface2) 0%, var(--surface1) 100%); border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #4CAF93 0%, #45a049 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
             </svg>
           </div>
-          <div class="stat-value">${profile.books_completed}</div>
+          <div class="stat-value" style="color: var(--primary);">${profile.books_completed}</div>
           <div class="stat-label" data-i18n="profile.books_completed">${i18n.t('profile.books_completed')}</div>
         </div>
 
-        <div class="stat-card">
-          <div class="stat-icon-wrapper">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--surface2) 0%, var(--surface1) 100%); border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round">
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
               <polyline points="16 7 22 7 22 13"/>
             </svg>
           </div>
-          <div class="stat-value">${Math.round(profile.total_hours)}</div>
+          <div class="stat-value" style="color: #2196F3;">${Math.round(profile.total_hours)}</div>
           <div class="stat-label" data-i18n="profile.hours_spent">${i18n.t('profile.hours_spent')}</div>
         </div>
 
-        <div class="stat-card">
-          <div class="stat-icon-wrapper">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--surface2) 0%, var(--surface1) 100%); border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
           </div>
-          <div class="stat-value">${profile.streak_days}</div>
+          <div class="stat-value" style="color: #FF9800;">${profile.streak_days}</div>
           <div class="stat-label" data-i18n="profile.current_streak">${i18n.t('profile.current_streak')}</div>
         </div>
       </div>

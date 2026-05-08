@@ -282,6 +282,7 @@ async function ensureSchema(db) {
         streak_days INTEGER DEFAULT 0,
         total_hours REAL    DEFAULT 0,
         badge       TEXT    DEFAULT 'bronze',
+        church      TEXT,
         created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
