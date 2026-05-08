@@ -372,7 +372,7 @@ router.post('/recalculate-badges', async (req, res) => {
         ) AS completed_books
       `).get(user.id)).c;
 
-      let newBadge = 'bronze';
+      let newBadge = null; // Par défaut, aucun badge
       if (booksCompleted >= 200) {
         newBadge = 'diamond';
       } else if (booksCompleted >= 100) {
@@ -380,6 +380,7 @@ router.post('/recalculate-badges', async (req, res) => {
       } else if (booksCompleted >= 30) {
         newBadge = 'silver';
       }
+      // Si <30 livres, newBadge reste null (aucun badge)
 
       // Mettre à jour le badge seulement si l'utilisateur n'a pas de badge manuel
       const currentUser = await req.db.prepare('SELECT badge FROM users WHERE id = ?').get(user.id);

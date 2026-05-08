@@ -80,13 +80,13 @@ async function ensureSchema(db) {
         avatar_url  TEXT,
         streak_days INTEGER DEFAULT 0,
         total_hours REAL    DEFAULT 0,
-        badge       TEXT    DEFAULT 'bronze',
+        badge       TEXT,
         created_at  TEXT    DEFAULT (datetime('now'))
       );`);
 
     // Migration pour ajouter le champ badge s'il n'existe pas
     try {
-      await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT DEFAULT 'bronze'`);
+      await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT`);
     } catch (e) {
       // Le champ existe déjà, ignorer l'erreur
     }
@@ -234,7 +234,7 @@ async function ensureSchema(db) {
     // Migration pour ajouter le champ badge s'il n'existe pas (PostgreSQL)
     try {
       console.log('🔄 Migration PostgreSQL: ajout du champ badge...');
-      await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT DEFAULT 'bronze'`);
+      await db.exec(`ALTER TABLE users ADD COLUMN badge TEXT`);
       console.log('✅ Champ badge ajouté avec succès');
     } catch (e) {
       console.log('ℹ️ Champ badge déjà existant ou erreur:', e.message);
@@ -281,7 +281,7 @@ async function ensureSchema(db) {
         avatar_url  TEXT,
         streak_days INTEGER DEFAULT 0,
         total_hours REAL    DEFAULT 0,
-        badge       TEXT    DEFAULT 'bronze',
+        badge       TEXT,
         church      TEXT,
         created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );

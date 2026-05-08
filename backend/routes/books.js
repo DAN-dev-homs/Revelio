@@ -27,7 +27,7 @@ async function updateUserBadge(db, userId) {
     ) AS completed_books
   `).get(userId)).c;
 
-  let newBadge = 'bronze';
+  let newBadge = null; // Par défaut, aucun badge
   if (booksCompleted >= 200) {
     newBadge = 'diamond';
   } else if (booksCompleted >= 100) {
@@ -35,6 +35,7 @@ async function updateUserBadge(db, userId) {
   } else if (booksCompleted >= 30) {
     newBadge = 'silver';
   }
+  // Si <30 livres, newBadge reste null (aucun badge)
 
   try {
     await db.prepare('UPDATE users SET badge = ? WHERE id = ?').run(newBadge, userId);
