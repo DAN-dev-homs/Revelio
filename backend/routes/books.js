@@ -146,11 +146,16 @@ router.post('/:id/save', auth, async (req, res) => {
 // PATCH /api/books/:id/progress — mettre à jour la progression
 router.patch('/:id/progress', auth, async (req, res) => {
   const { progress_pct } = req.body;
+  const bookId = req.params.id;
+  const userId = req.user.id;
+
   if (progress_pct == null) return res.status(400).json({ error: 'progress_pct required' });
+  if (!bookId) return res.status(400).json({ error: 'book_id required' });
+  if (!userId) return res.status(401).json({ error: 'user not authenticated' });
 
   const session = await req.db.prepare(
     'SELECT id, progress_pct FROM reading_sessions WHERE user_id = ? AND book_id = ?'
-  ).get(req.user.id, req.params.id);
+  ).get(userId, bookId);
 
   const pct = parseInt(progress_pct, 10) || 0;
 
@@ -158,39 +163,39 @@ router.patch('/:id/progress', auth, async (req, res) => {
     if (session.progress_pct < 100 && pct === 100) {
       let book;
       try {
-        book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
+        book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(bookId);
       } catch (e) {
         // Si le champ reading_time_min n'existe pas, utiliser duration_min
-        book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(req.params.id);
+        book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(bookId);
         if (book) book.reading_time_min = book.duration_min || 5;
       }
       if (book) {
-        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, req.user.id);
-        await updateUserBadge(req.db, req.user.id);
+        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, userId);
+        await updateUserBadge(req.db, userId);
       }
     }
     await req.db.prepare(
       `UPDATE reading_sessions SET progress_pct = ?, updated_at = CURRENT_TIMESTAMP
        WHERE user_id = ? AND book_id = ?`
-    ).run(pct, req.user.id, req.params.id);
+    ).run(pct, userId, bookId);
   } else {
     if (pct === 100) {
       let book;
       try {
-        book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(req.params.id);
+        book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(bookId);
       } catch (e) {
         // Si le champ reading_time_min n'existe pas, utiliser duration_min
-        book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(req.params.id);
+        book = await req.db.prepare('SELECT duration_min FROM books WHERE id = ?').get(bookId);
         if (book) book.reading_time_min = book.duration_min || 5;
       }
       if (book) {
-        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, req.user.id);
-        await updateUserBadge(req.db, req.user.id);
+        await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, userId);
+        await updateUserBadge(req.db, userId);
       }
     }
     await req.db.prepare(
       'INSERT INTO reading_sessions (user_id, book_id, progress_pct) VALUES (?, ?, ?)'
-    ).run(req.user.id, req.params.id, pct);
+    ).run(userId, bookId, pct);
   }
   res.json({ success: true });
 });
