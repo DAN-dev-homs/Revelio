@@ -411,13 +411,12 @@ const ProfilePage = (() => {
           container.querySelector('#new-password').value = '';
         }
         
-        // Mettre à jour localstorage
+        // Mettre à jour localstorage (sauf church qui sera récupéré depuis l'API)
         const user = JSON.parse(localStorage.getItem('revelio_user') || '{}');
         user.name = newName;
-        user.church = newChurch;
         localStorage.setItem('revelio_user', JSON.stringify(user));
         cachedProfile.name = newName;
-        cachedProfile.church = newChurch;
+        // Ne pas stocker church dans localStorage, il sera récupéré depuis l'API
         
         isSettingsView = false;
         renderCurrentView(container);

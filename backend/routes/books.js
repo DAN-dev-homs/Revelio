@@ -7,23 +7,24 @@ const { auth } = require('../middleware/auth');
 async function updateUserBadge(db, userId) {
   // Vérifier si l'utilisateur a déjà un badge manuel (attribué par l'admin)
   const user = await db.prepare('SELECT badge FROM users WHERE id = ?').get(userId);
-  
-  // Si l'utilisateur a déjà un badge manuel, ne pas l'écraser
-  if (user && user.badge) {
+
+  // Si l'utilisateur a déjà un badge manuel (autre que bronze par défaut), ne pas l'écraser
+  // Le bronze par défaut peut être remplacé automatiquement
+  if (user && user.badge && user.badge !== 'bronze' && user.badge !== null) {
     console.log('🏆 Badge manuel détecté, pas de mise à jour automatique:', user.badge);
     return;
   }
 
   // Sinon, calculer le badge automatiquement
   const booksCompleted = (await db.prepare(`
-    SELECT COUNT(DISTINCT book_id) as c
+    SELECT COUNT(*) as c
     FROM (
       SELECT book_id, MAX(progress_pct) as max_progress
       FROM reading_sessions
       WHERE user_id = ?
       GROUP BY book_id
-    ) AS book_progress
-    WHERE max_progress = 100
+      HAVING MAX(progress_pct) = 100
+    ) AS completed_books
   `).get(userId)).c;
 
   let newBadge = 'bronze';

@@ -56,14 +56,14 @@ router.get('/me', auth, async (req, res) => {
       // Compter chaque livre unique terminé une seule fois
       // Utiliser une sous-requête pour éviter de recompter les livres relus
       const booksResult = await req.db.prepare(`
-        SELECT COUNT(DISTINCT book_id) as c
+        SELECT COUNT(*) as c
         FROM (
           SELECT book_id, MAX(progress_pct) as max_progress
           FROM reading_sessions
           WHERE user_id = $1
           GROUP BY book_id
-        ) AS book_progress
-        WHERE max_progress = 100
+          HAVING MAX(progress_pct) = 100
+        ) AS completed_books
       `).get(req.user.id);
       booksCompleted = booksResult.c;
       console.log('📚 Livres uniques complétés calculés:', booksCompleted);
@@ -198,14 +198,14 @@ router.get('/search', auth, async (req, res) => {
     // Ajouter le nombre de livres complétés pour chaque utilisateur (comptage unique)
     const usersWithStats = await Promise.all(users.map(async (user) => {
       const booksCompleted = (await req.db.prepare(`
-        SELECT COUNT(DISTINCT book_id) as c
+        SELECT COUNT(*) as c
         FROM (
           SELECT book_id, MAX(progress_pct) as max_progress
           FROM reading_sessions
           WHERE user_id = $1
           GROUP BY book_id
-        ) AS book_progress
-        WHERE max_progress = 100
+          HAVING MAX(progress_pct) = 100
+        ) AS completed_books
       `).get(user.id)).c;
 
       return {
@@ -330,14 +330,14 @@ router.get('/:id', auth, async (req, res) => {
 
     // Statistiques de l'utilisateur - compter chaque livre unique terminé une seule fois
     const booksCompleted = (await req.db.prepare(`
-      SELECT COUNT(DISTINCT book_id) as c
+      SELECT COUNT(*) as c
       FROM (
         SELECT book_id, MAX(progress_pct) as max_progress
         FROM reading_sessions
         WHERE user_id = $1
         GROUP BY book_id
-      ) AS book_progress
-      WHERE max_progress = 100
+        HAVING MAX(progress_pct) = 100
+      ) AS completed_books
     `).get(userId)).c;
 
     // Posts récents de l'utilisateur
