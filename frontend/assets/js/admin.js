@@ -181,9 +181,45 @@ async function loadMonitoring() {
           </div>
         </div>
       </div>`;
+
+    // Afficher les meilleurs lecteurs
+    renderTopReaders(d.topReaders.week, 'top-readers-week');
+    renderTopReaders(d.topReaders.month, 'top-readers-month');
   } catch (e) {
     container.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
   }
+}
+
+function renderTopReaders(readers, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!readers || readers.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:13px;">Aucune donnée disponible.</p>';
+    return;
+  }
+
+  container.innerHTML = readers.map((reader, index) => {
+    const badgeIcon = reader.badge ? {
+      bronze: '🥉',
+      silver: '🥈',
+      gold: '🥇',
+      diamond: '💎'
+    }[reader.badge] : '';
+    const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">
+          ${rankIcon}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:500;">${reader.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${reader.books_read} livres · ${Math.round(reader.total_progress || 0)}% progression</div>
+        </div>
+        ${badgeIcon ? `<span style="font-size:16px;">${badgeIcon}</span>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════

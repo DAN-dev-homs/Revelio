@@ -48,6 +48,35 @@ router.get('/stats', async (req, res) => {
   const newUsersMonth   = (await db.prepare('SELECT COUNT(*) as c FROM users WHERE created_at >= ?').get(thirtyDaysAgo)).c;
   const totalBooks      = (await db.prepare('SELECT COUNT(*) as c FROM books').get()).c;
   const booksWithVideo  = (await db.prepare('SELECT COUNT(*) as c FROM books WHERE video_url IS NOT NULL').get()).c;
+
+  // Meilleurs lecteurs de la semaine (7 derniers jours)
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 19).replace('T', ' ');
+
+  const topReadersWeek = await db.prepare(`
+    SELECT u.id, u.name, u.avatar_url, u.badge,
+           COUNT(DISTINCT rs.book_id) as books_read,
+           SUM(rs.progress_pct) as total_progress
+    FROM users u
+    LEFT JOIN reading_sessions rs ON u.id = rs.user_id AND rs.updated_at >= ?
+    WHERE u.role = 'user'
+    GROUP BY u.id
+    ORDER BY books_read DESC, total_progress DESC
+    LIMIT 10
+  `).all(weekAgo);
+
+  // Meilleurs lecteurs du mois (30 derniers jours)
+  const topReadersMonth = await db.prepare(`
+    SELECT u.id, u.name, u.avatar_url, u.badge,
+           COUNT(DISTINCT rs.book_id) as books_read,
+           SUM(rs.progress_pct) as total_progress
+    FROM users u
+    LEFT JOIN reading_sessions rs ON u.id = rs.user_id AND rs.updated_at >= ?
+    WHERE u.role = 'user'
+    GROUP BY u.id
+    ORDER BY books_read DESC, total_progress DESC
+    LIMIT 10
+  `).all(thirtyDaysAgo);
   const booksWithAudio  = (await db.prepare('SELECT COUNT(*) as c FROM books WHERE audio_url IS NOT NULL').get()).c;
   const totalPosts      = (await db.prepare('SELECT COUNT(*) as c FROM posts').get()).c;
   const totalComments   = (await db.prepare('SELECT COUNT(*) as c FROM comments').get()).c;
@@ -71,7 +100,11 @@ router.get('/stats', async (req, res) => {
     books: { total: totalBooks, withVideo: booksWithVideo, withAudio: booksWithAudio },
     engagement: { posts: totalPosts, comments: totalComments, likes: totalLikes, savedBooks: totalSaved },
     recentActivity,
-    recentUsers
+    recentUsers,
+    topReaders: {
+      week: topReadersWeek,
+      month: topReadersMonth
+    }
   });
 });
 

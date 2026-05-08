@@ -82,6 +82,23 @@
         <button class="btn btn-ghost" onclick="loadMonitoring()">↻ Actualiser</button>
       </div>
       <div id="stats-container"><div class="spinner"></div></div>
+
+      <!-- Meilleurs lecteurs -->
+      <div style="margin-top: 32px;">
+        <h3 style="margin-bottom: 16px;">🏆 Meilleurs lecteurs</h3>
+        <div class="flex gap-md" style="flex-wrap: wrap;">
+          <!-- Meilleurs lecteurs de la semaine -->
+          <div class="card" style="flex: 1; min-width: 300px;">
+            <h4 style="margin-bottom: 12px;">📅 Cette semaine</h4>
+            <div id="top-readers-week"><div class="spinner"></div></div>
+          </div>
+          <!-- Meilleurs lecteurs du mois -->
+          <div class="card" style="flex: 1; min-width: 300px;">
+            <h4 style="margin-bottom: 12px;">📆 Ce mois</h4>
+            <div id="top-readers-month"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── LIVRES ─────────────────────────────────────── -->
