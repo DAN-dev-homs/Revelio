@@ -96,38 +96,55 @@ router.get('/stats', async (req, res) => {
   `).all();
 
   // Livres les plus lus (basé sur reading_sessions)
-  const mostReadBooks = await db.prepare(`
-    SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
-           COUNT(DISTINCT rs.user_id) as readers_count,
-           AVG(rs.progress_pct) as avg_progress
-    FROM books b
-    LEFT JOIN reading_sessions rs ON b.id = rs.book_id
-    GROUP BY b.id
-    ORDER BY readers_count DESC
-    LIMIT 10
-  `).all();
+  let mostReadBooks = [];
+  try {
+    mostReadBooks = await db.prepare(`
+      SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
+             COUNT(DISTINCT rs.user_id) as readers_count
+      FROM books b
+      LEFT JOIN reading_sessions rs ON b.id = rs.book_id
+      GROUP BY b.id, b.title, b.author, b.cover_color, b.cover_url
+      ORDER BY readers_count DESC
+      LIMIT 10
+    `).all();
+  } catch (e) {
+    console.error('Error fetching most read books:', e);
+    mostReadBooks = [];
+  }
 
   // Livres les plus sauvegardés
-  const mostSavedBooks = await db.prepare(`
-    SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
-           COUNT(DISTINCT sb.user_id) as saves_count
-    FROM books b
-    LEFT JOIN saved_books sb ON b.id = sb.book_id
-    GROUP BY b.id
-    ORDER BY saves_count DESC
-    LIMIT 10
-  `).all();
+  let mostSavedBooks = [];
+  try {
+    mostSavedBooks = await db.prepare(`
+      SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
+             COUNT(DISTINCT sb.user_id) as saves_count
+      FROM books b
+      LEFT JOIN saved_books sb ON b.id = sb.book_id
+      GROUP BY b.id, b.title, b.author, b.cover_color, b.cover_url
+      ORDER BY saves_count DESC
+      LIMIT 10
+    `).all();
+  } catch (e) {
+    console.error('Error fetching most saved books:', e);
+    mostSavedBooks = [];
+  }
 
   // Livres les plus likés (basé sur les posts qui mentionnent des livres)
-  const mostLikedBooks = await db.prepare(`
-    SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
-           SUM(p.likes_count) as total_likes
-    FROM books b
-    LEFT JOIN posts p ON p.book_id = b.id
-    GROUP BY b.id
-    ORDER BY total_likes DESC
-    LIMIT 10
-  `).all();
+  let mostLikedBooks = [];
+  try {
+    mostLikedBooks = await db.prepare(`
+      SELECT b.id, b.title, b.author, b.cover_color, b.cover_url,
+             COALESCE(SUM(p.likes_count), 0) as total_likes
+      FROM books b
+      LEFT JOIN posts p ON p.book_id = b.id
+      GROUP BY b.id, b.title, b.author, b.cover_color, b.cover_url
+      ORDER BY total_likes DESC
+      LIMIT 10
+    `).all();
+  } catch (e) {
+    console.error('Error fetching most liked books:', e);
+    mostLikedBooks = [];
+  }
 
   res.json({
     users: { total: totalUsers, admins: totalAdmins, regular: totalUsers - totalAdmins, newThisMonth: newUsersMonth },
