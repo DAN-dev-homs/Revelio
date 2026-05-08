@@ -234,7 +234,7 @@ const CommunityPage = (() => {
     const feed = container.querySelector('#community-feed');
     if (!feed) return;
 
-    // Appliquer la logique de priorisation des badges Diamond dans TOUS les onglets
+    // Appliquer la logique de tri selon l'onglet
     let filtered = posts;
 
     // Séparer les posts Diamond et les autres
@@ -242,23 +242,22 @@ const CommunityPage = (() => {
       const authorBadge = p.author_badge || 'bronze';
       return authorBadge === 'diamond';
     });
-    
+
     const otherPosts = posts.filter(p => {
       const authorBadge = p.author_badge || 'bronze';
       return authorBadge !== 'diamond';
     });
-    
+
     if (activeTab === 'recent') {
-      // Pour "Les plus récents": Diamond d'abord, puis autres en aléatoire
-      const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
-      filtered = [...diamondPosts, ...shuffledOthers];
+      // Pour "Les plus récents": trier par date de création sans privilégier les badges
+      filtered = [...posts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
     // Pour 'community': tous les posts en aléatoire mais avec priorisation Diamond
     else if (activeTab === 'community') {
       const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
       filtered = [...diamondPosts, ...shuffledOthers];
     }
-    // Par défaut, appliquer la même logique
+    // Par défaut, appliquer la même logique que community
     else {
       const shuffledOthers = [...otherPosts].sort(() => 0.5 - Math.random());
       filtered = [...diamondPosts, ...shuffledOthers];
