@@ -808,8 +808,9 @@ async function saveTeamMember() {
     const endpoint = id ? `/admin/team/${id}` : '/admin/team';
     const method = id ? 'PUT' : 'POST';
     
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${API}${endpoint}`, {
       method,
+      headers: apiHeaders(),
       body: formData
     });
     
@@ -921,8 +922,9 @@ async function savePartner() {
     const endpoint = id ? `/admin/partners/${id}` : '/admin/partners';
     const method = id ? 'PUT' : 'POST';
     
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${API}${endpoint}`, {
       method,
+      headers: apiHeaders(),
       body: formData
     });
     
