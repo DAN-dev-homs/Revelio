@@ -27,7 +27,31 @@ const storage = multer.diskStorage({
     cb(null, `book-${Date.now()}-${Math.round(Math.random()*1000)}${ext}`);
   }
 });
-const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } }); // 100MB
+const upload = multer({ 
+  storage, 
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  fileFilter: (req, file, cb) => {
+    // Accepter les images
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées'), false);
+    }
+  }
+}); // 100MB
+
+// Middleware de gestion d'erreurs pour multer
+function handleUploadError(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Fichier trop grand (max 100MB)' });
+    }
+    return res.status(400).json({ error: err.message });
+  } else if (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  next();
+}
 
 // Protéger toutes les routes admin
 router.use(auth);
@@ -587,10 +611,13 @@ router.get('/team', isAdmin, async (req, res) => {
   }
 });
 
-router.post('/team', isAdmin, upload.single('photo'), async (req, res) => {
+router.post('/team', isAdmin, upload.single('photo'), handleUploadError, async (req, res) => {
   try {
     const { name, role, bio, linkedin, twitter, order_index } = req.body;
     const photo_url = req.file ? `/uploads/media/${req.file.filename}` : null;
+    
+    console.log('📸 Upload team - fichier:', req.file);
+    console.log('📸 Upload team - body:', req.body);
     
     await req.db.prepare(
       'INSERT INTO team_members (name, role, photo_url, bio, linkedin, twitter, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -598,18 +625,21 @@ router.post('/team', isAdmin, upload.single('photo'), async (req, res) => {
     
     await logActivity(req.db, req.user.id, 'create_team_member', `Added team member: ${name}`, req.ip);
     
-    res.json({ success: true });
+    res.json({ success: true, photo_url });
   } catch (e) {
     console.error('Error adding team member:', e);
-    res.status(500).json({ error: 'Failed to add team member' });
+    res.status(500).json({ error: 'Failed to add team member: ' + e.message });
   }
 });
 
-router.put('/team/:id', isAdmin, upload.single('photo'), async (req, res) => {
+router.put('/team/:id', isAdmin, upload.single('photo'), handleUploadError, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { name, role, bio, linkedin, twitter, order_index } = req.body;
     const photo_url = req.file ? `/uploads/media/${req.file.filename}` : req.body.existing_photo;
+    
+    console.log('📸 Update team - fichier:', req.file);
+    console.log('📸 Update team - existing_photo:', req.body.existing_photo);
     
     await req.db.prepare(
       'UPDATE team_members SET name = ?, role = ?, photo_url = ?, bio = ?, linkedin = ?, twitter = ?, order_index = ? WHERE id = ?'
@@ -617,10 +647,10 @@ router.put('/team/:id', isAdmin, upload.single('photo'), async (req, res) => {
     
     await logActivity(req.db, req.user.id, 'update_team_member', `Updated team member: ${name}`, req.ip);
     
-    res.json({ success: true });
+    res.json({ success: true, photo_url });
   } catch (e) {
     console.error('Error updating team member:', e);
-    res.status(500).json({ error: 'Failed to update team member' });
+    res.status(500).json({ error: 'Failed to update team member: ' + e.message });
   }
 });
 
@@ -652,10 +682,13 @@ router.get('/partners', isAdmin, async (req, res) => {
   }
 });
 
-router.post('/partners', isAdmin, upload.single('logo'), async (req, res) => {
+router.post('/partners', isAdmin, upload.single('logo'), handleUploadError, async (req, res) => {
   try {
     const { name, website_url, description, order_index } = req.body;
     const logo_url = req.file ? `/uploads/media/${req.file.filename}` : null;
+    
+    console.log('📸 Upload partner - fichier:', req.file);
+    console.log('📸 Upload partner - body:', req.body);
     
     await req.db.prepare(
       'INSERT INTO partners (name, logo_url, website_url, description, order_index) VALUES (?, ?, ?, ?, ?)'
@@ -663,18 +696,21 @@ router.post('/partners', isAdmin, upload.single('logo'), async (req, res) => {
     
     await logActivity(req.db, req.user.id, 'create_partner', `Added partner: ${name}`, req.ip);
     
-    res.json({ success: true });
+    res.json({ success: true, logo_url });
   } catch (e) {
     console.error('Error adding partner:', e);
-    res.status(500).json({ error: 'Failed to add partner' });
+    res.status(500).json({ error: 'Failed to add partner: ' + e.message });
   }
 });
 
-router.put('/partners/:id', isAdmin, upload.single('logo'), async (req, res) => {
+router.put('/partners/:id', isAdmin, upload.single('logo'), handleUploadError, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { name, website_url, description, order_index } = req.body;
     const logo_url = req.file ? `/uploads/media/${req.file.filename}` : req.body.existing_logo;
+    
+    console.log('📸 Update partner - fichier:', req.file);
+    console.log('📸 Update partner - existing_logo:', req.body.existing_logo);
     
     await req.db.prepare(
       'UPDATE partners SET name = ?, logo_url = ?, website_url = ?, description = ?, order_index = ? WHERE id = ?'
@@ -682,10 +718,10 @@ router.put('/partners/:id', isAdmin, upload.single('logo'), async (req, res) => 
     
     await logActivity(req.db, req.user.id, 'update_partner', `Updated partner: ${name}`, req.ip);
     
-    res.json({ success: true });
+    res.json({ success: true, logo_url });
   } catch (e) {
     console.error('Error updating partner:', e);
-    res.status(500).json({ error: 'Failed to update partner' });
+    res.status(500).json({ error: 'Failed to update partner: ' + e.message });
   }
 });
 
