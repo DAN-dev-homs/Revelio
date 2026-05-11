@@ -38,17 +38,17 @@ const BookDetailPage = (() => {
     const coverUrl = b.cover_url || '';
     const coverStyle = coverUrl ? `background-image: url('${coverUrl}'); background-size: cover;` : `background: ${b.cover_color};`;
 
-    // Parsing simple du Markdown pour le résumé - style manuscrit
+    // Parsing simple du Markdown pour le résumé - style lisible
     const parseSummary = (text) => {
-      if (!text) return '<p style="color: #7a756f; font-style: italic; font-family: cursive;">Aucun résumé disponible.</p>';
-      let html = text.replace(/^### (.*$)/gim, '<h3 style="font-family: cursive, \"Brush Script MT\", \"Segoe Script\", sans-serif; font-size: 22px; font-weight: 600; color: #5a544d; margin: 24px 0 14px 0; padding-bottom: 8px; border-bottom: 1px solid #e0dcd4;">$1</h3>')
-                     .replace(/^## (.*$)/gim, '<h2 style="font-family: cursive, \"Brush Script MT\", \"Segoe Script\", sans-serif; font-size: 26px; font-weight: 600; color: #4a453d; margin: 28px 0 16px 0; padding-bottom: 10px; border-bottom: 2px solid #d0ccc4;">$1</h2>')
-                     .replace(/^# (.*$)/gim, '<h1 style="font-family: cursive, \"Brush Script MT\", \"Segoe Script\", sans-serif; font-size: 30px; font-weight: 700; color: #3a352f; margin: 32px 0 20px 0; text-align: center;">$1</h1>')
+      if (!text) return '<p style="color: #7a756f; font-style: italic;">Aucun résumé disponible.</p>';
+      let html = text.replace(/^### (.*$)/gim, '<h3 style="font-family: Georgia, serif; font-size: 22px; font-weight: 600; color: #5a544d; margin: 24px 0 14px 0; padding-bottom: 8px; border-bottom: 1px solid #e0dcd4;">$1</h3>')
+                     .replace(/^## (.*$)/gim, '<h2 style="font-family: Georgia, serif; font-size: 26px; font-weight: 600; color: #4a453d; margin: 28px 0 16px 0; padding-bottom: 10px; border-bottom: 2px solid #d0ccc4;">$1</h2>')
+                     .replace(/^# (.*$)/gim, '<h1 style="font-family: Georgia, serif; font-size: 30px; font-weight: 700; color: #3a352f; margin: 32px 0 20px 0; text-align: center;">$1</h1>')
                      .replace(/\*\*(.*)\*\*/gim, '<strong style="font-weight: 700; color: #2a2520;">$1</strong>')
                      .replace(/\*(.*)\*/gim, '<em style="color: #5a544d;">$1</em>')
                      .replace(/\n\n/gim, '</p><p style="margin-bottom: 20px;">')
                      .replace(/\n/gim, '<br>');
-      return `<p style="margin-bottom: 20px; font-family: cursive, \"Brush Script MT\", \"Segoe Script\", sans-serif; font-size: 20px; line-height: 1.9;">${html}</p>`;
+      return `<p style="margin-bottom: 20px; font-family: Georgia, serif; font-size: 20px; line-height: 1.9;">${html}</p>`;
     };
 
     let keyPointsHtml = '';
@@ -153,7 +153,7 @@ const BookDetailPage = (() => {
               border-radius: 12px;
             "></div>
             <div style="
-              font-family: cursive, 'Brush Script MT', 'Segoe Script', sans-serif;
+              font-family: Georgia, serif;
               font-size: 20px;
               line-height: 1.9;
               color: #3a352f;
