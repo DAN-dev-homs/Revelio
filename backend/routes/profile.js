@@ -111,29 +111,67 @@ router.get('/me', auth, async (req, res) => {
     // Calculer le streak actuel (jours consécutifs avec lecture)
     let streakDays = 0;
     try {
-      // Simplification: compter les jours consécutifs avec lecture depuis aujourd'hui
-      const today = new Date().toISOString().split('T')[0];
-      let currentDate = new Date(today);
-      let consecutiveDays = 0;
+      // Récupérer toutes les dates de lecture uniques pour cet utilisateur
+      const dbType = req.db.type || 'sqlite';
       
-      for (let i = 0; i < 30; i++) { // Vérifier jusqu'à 30 jours
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const hasActivity = await req.db.prepare(`
-          SELECT 1 FROM reading_sessions 
-          WHERE user_id = $1 AND DATE(updated_at) = $2 
-          LIMIT 1
-        `).get(req.user.id, dateStr);
+      let dateQuery;
+      if (dbType === 'postgres') {
+        dateQuery = `SELECT DISTINCT DATE(updated_at) as read_date 
+                     FROM reading_sessions 
+                     WHERE user_id = $1 AND progress_pct > 0
+                     ORDER BY read_date DESC`;
+      } else {
+        // SQLite - utiliser substr pour extraire la date (YYYY-MM-DD)
+        dateQuery = `SELECT DISTINCT substr(updated_at, 1, 10) as read_date 
+                     FROM reading_sessions 
+                     WHERE user_id = ? AND progress_pct > 0
+                     ORDER BY read_date DESC`;
+      }
+      
+      const readDates = await req.db.prepare(dateQuery).all(req.user.id);
+      console.log('📅 Dates de lecture trouvées:', readDates.map(d => d.read_date));
+      
+      if (readDates.length > 0) {
+        // Convertir les dates en objets Date pour faciliter la comparaison
+        const dates = readDates.map(d => new Date(d.read_date));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        if (hasActivity) {
-          consecutiveDays++;
-          currentDate.setDate(currentDate.getDate() - 1);
+        // Vérifier si l'utilisateur a lu aujourd'hui ou hier
+        const lastReadDate = dates[0];
+        lastReadDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = today.getTime() - lastReadDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        console.log('📊 Dernier jour de lecture:', lastReadDate.toISOString().split('T')[0]);
+        console.log('📊 Différence en jours:', diffDays);
+        
+        // Si le dernier jour de lecture était il y a plus d'1 jour, le streak est cassé
+        if (diffDays > 1) {
+          streakDays = 0;
         } else {
-          break;
+          // Calculer le streak en comptant les jours consécutifs
+          streakDays = 1; // Au moins 1 jour (le dernier jour de lecture)
+          
+          for (let i = 1; i < dates.length; i++) {
+            const prevDate = new Date(dates[i - 1]);
+            const currDate = new Date(dates[i]);
+            prevDate.setHours(0, 0, 0, 0);
+            currDate.setHours(0, 0, 0, 0);
+            
+            const dayDiff = (prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24);
+            
+            if (dayDiff === 1) {
+              streakDays++;
+            } else {
+              break;
+            }
+          }
         }
       }
       
-      streakDays = consecutiveDays;
-      console.log('🔥 Streak calculé (simplifié):', streakDays);
+      console.log('🔥 Streak calculé:', streakDays);
       
       // Mettre à jour la base de données avec le nouveau streak
       await req.db.prepare(`
