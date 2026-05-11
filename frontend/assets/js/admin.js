@@ -810,7 +810,7 @@ async function saveTeamMember() {
     
     const response = await fetch(`${API}${endpoint}`, {
       method,
-      headers: apiHeaders(),
+      headers: { 'Authorization': `Bearer ${adminToken}` },
       body: formData
     });
     
@@ -924,7 +924,7 @@ async function savePartner() {
     
     const response = await fetch(`${API}${endpoint}`, {
       method,
-      headers: apiHeaders(),
+      headers: { 'Authorization': `Bearer ${adminToken}` },
       body: formData
     });
     
