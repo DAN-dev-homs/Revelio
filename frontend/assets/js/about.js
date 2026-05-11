@@ -124,7 +124,10 @@ async function loadPartners() {
     
     carousel.innerHTML = duplicatedPartners.map(partner => `
       <div class="partner-logo">
-        ${partner.logo_url ? `<img src="${partner.logo_url}" alt="${partner.name}">` : partner.name}
+        <div class="partner-logo-img">
+          ${partner.logo_url ? `<img src="${partner.logo_url}" alt="${partner.name}">` : `<span style="font-size: 24px; font-weight: 600; color: var(--accent-red);">${partner.name.charAt(0)}</span>`}
+        </div>
+        <span class="partner-logo-name">${partner.name}</span>
       </div>
     `).join('');
   } catch (e) {
