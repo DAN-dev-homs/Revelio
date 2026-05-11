@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // ── Helper : log d'activité ──────────────────────────────
 async function logActivity(db, userId, action, detail, ip) {
@@ -614,10 +615,18 @@ router.get('/team', isAdmin, async (req, res) => {
 router.post('/team', isAdmin, upload.single('photo'), handleUploadError, async (req, res) => {
   try {
     const { name, role, bio, linkedin, twitter, order_index } = req.body;
-    const photo_url = req.file ? `/uploads/media/${req.file.filename}` : null;
     
-    console.log('📸 Upload team - fichier:', req.file);
-    console.log('📸 Upload team - body:', req.body);
+    // Upload to Cloudinary if file exists
+    let photo_url = null;
+    if (req.file) {
+      photo_url = await uploadToCloudinary(req.file.path, 'revelio/team');
+      // Delete local file after upload
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error deleting local file:', err);
+      });
+    }
+    
+    console.log('☁️ Cloudinary team upload - URL:', photo_url);
     
     await req.db.prepare(
       'INSERT INTO team_members (name, role, photo_url, bio, linkedin, twitter, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -636,10 +645,18 @@ router.put('/team/:id', isAdmin, upload.single('photo'), handleUploadError, asyn
   try {
     const id = parseInt(req.params.id);
     const { name, role, bio, linkedin, twitter, order_index } = req.body;
-    const photo_url = req.file ? `/uploads/media/${req.file.filename}` : req.body.existing_photo;
     
-    console.log('📸 Update team - fichier:', req.file);
-    console.log('📸 Update team - existing_photo:', req.body.existing_photo);
+    // Upload to Cloudinary if new file exists
+    let photo_url = req.body.existing_photo;
+    if (req.file) {
+      photo_url = await uploadToCloudinary(req.file.path, 'revelio/team');
+      // Delete local file after upload
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error deleting local file:', err);
+      });
+    }
+    
+    console.log('☁️ Cloudinary team update - URL:', photo_url);
     
     await req.db.prepare(
       'UPDATE team_members SET name = ?, role = ?, photo_url = ?, bio = ?, linkedin = ?, twitter = ?, order_index = ? WHERE id = ?'
@@ -685,10 +702,18 @@ router.get('/partners', isAdmin, async (req, res) => {
 router.post('/partners', isAdmin, upload.single('logo'), handleUploadError, async (req, res) => {
   try {
     const { name, website_url, description, order_index } = req.body;
-    const logo_url = req.file ? `/uploads/media/${req.file.filename}` : null;
     
-    console.log('📸 Upload partner - fichier:', req.file);
-    console.log('📸 Upload partner - body:', req.body);
+    // Upload to Cloudinary if file exists
+    let logo_url = null;
+    if (req.file) {
+      logo_url = await uploadToCloudinary(req.file.path, 'revelio/partners');
+      // Delete local file after upload
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error deleting local file:', err);
+      });
+    }
+    
+    console.log('☁️ Cloudinary partner upload - URL:', logo_url);
     
     await req.db.prepare(
       'INSERT INTO partners (name, logo_url, website_url, description, order_index) VALUES (?, ?, ?, ?, ?)'
@@ -707,10 +732,18 @@ router.put('/partners/:id', isAdmin, upload.single('logo'), handleUploadError, a
   try {
     const id = parseInt(req.params.id);
     const { name, website_url, description, order_index } = req.body;
-    const logo_url = req.file ? `/uploads/media/${req.file.filename}` : req.body.existing_logo;
     
-    console.log('📸 Update partner - fichier:', req.file);
-    console.log('📸 Update partner - existing_logo:', req.body.existing_logo);
+    // Upload to Cloudinary if new file exists
+    let logo_url = req.body.existing_logo;
+    if (req.file) {
+      logo_url = await uploadToCloudinary(req.file.path, 'revelio/partners');
+      // Delete local file after upload
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error deleting local file:', err);
+      });
+    }
+    
+    console.log('☁️ Cloudinary partner update - URL:', logo_url);
     
     await req.db.prepare(
       'UPDATE partners SET name = ?, logo_url = ?, website_url = ?, description = ?, order_index = ? WHERE id = ?'
