@@ -1,7 +1,7 @@
 // ============================================================
 // REVELIO — Cloudinary Configuration
 // ============================================================
-const { v2: cloudinary } = require('cloudinary');
+const cloudinary = require('cloudinary').v2;
 
 // Configuration
 cloudinary.config({
