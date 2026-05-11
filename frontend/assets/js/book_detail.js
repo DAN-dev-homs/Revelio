@@ -38,17 +38,17 @@ const BookDetailPage = (() => {
     const coverUrl = b.cover_url || '';
     const coverStyle = coverUrl ? `background-image: url('${coverUrl}'); background-size: cover;` : `background: ${b.cover_color};`;
 
-    // Parsing simple du Markdown pour le résumé
+    // Parsing simple du Markdown pour le résumé - style papier
     const parseSummary = (text) => {
-      if (!text) return '<p>Aucun résumé disponible.</p>';
-      let html = text.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                     .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-                     .replace(/\*(.*)\*/gim, '<em>$1</em>')
-                     .replace(/\n\n/gim, '</p><p>')
+      if (!text) return '<p style="color: #7a756f; font-style: italic;">Aucun résumé disponible.</p>';
+      let html = text.replace(/^### (.*$)/gim, '<h3 style="font-family: Georgia, serif; font-size: 17px; font-weight: 600; color: #5a544d; margin: 20px 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e0dcd4;">$1</h3>')
+                     .replace(/^## (.*$)/gim, '<h2 style="font-family: Georgia, serif; font-size: 19px; font-weight: 600; color: #4a453d; margin: 24px 0 14px 0; padding-bottom: 8px; border-bottom: 2px solid #d0ccc4;">$1</h2>')
+                     .replace(/^# (.*$)/gim, '<h1 style="font-family: Georgia, serif; font-size: 22px; font-weight: 700; color: #3a352f; margin: 28px 0 16px 0; text-align: center;">$1</h1>')
+                     .replace(/\*\*(.*)\*\*/gim, '<strong style="font-weight: 600; color: #2a2520;">$1</strong>')
+                     .replace(/\*(.*)\*/gim, '<em style="color: #5a544d;">$1</em>')
+                     .replace(/\n\n/gim, '</p><p style="margin-bottom: 14px;">')
                      .replace(/\n/gim, '<br>');
-      return `<p>${html}</p>`;
+      return `<p style="margin-bottom: 14px;">${html}</p>`;
     };
 
     let keyPointsHtml = '';
@@ -130,9 +130,41 @@ const BookDetailPage = (() => {
         ` : ''}
 
         <!-- 3. RÉSUMÉ ÉCRIT -->
-        <div style="margin-bottom: 32px; line-height: 1.7; font-size: 15px;" id="section-summary">
+        <div style="margin-bottom: 32px;" id="section-summary">
           <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Résumé complet</h3>
-          ${parseSummary(b.summary)}
+          <div style="
+            background: linear-gradient(135deg, #fefefe 0%, #f8f6f1 100%);
+            border-radius: 12px;
+            padding: 28px 24px;
+            box-shadow: 
+              0 2px 8px rgba(0,0,0,0.06),
+              0 4px 20px rgba(0,0,0,0.04),
+              inset 0 1px 0 rgba(255,255,255,0.8);
+            position: relative;
+            border: 1px solid #e8e4dc;
+          " class="paper-summary">
+            <!-- Texture papier subtile -->
+            <div style="
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(200,180,160,0.03) 28px, rgba(200,180,160,0.03) 29px);
+              pointer-events: none;
+              border-radius: 12px;
+            "></div>
+            <div style="
+              font-family: 'Georgia', 'Times New Roman', serif;
+              font-size: 16px;
+              line-height: 1.9;
+              color: #3a352f;
+              position: relative;
+              z-index: 1;
+              text-align: justify;
+              hyphens: auto;
+            ">
+              ${parseSummary(b.summary)}
+            </div>
+          </div>
         </div>
 
         <!-- 6. PASSERELLE VERS LE LIVRE (Amazon) -->
