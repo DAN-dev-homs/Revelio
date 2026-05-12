@@ -4,6 +4,7 @@
 const router = require('express').Router();
 const { auth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // GET /api/profile/me — profil complet
 router.get('/me', auth, async (req, res) => {
@@ -547,10 +548,22 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5M
 router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-  const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-  await req.db.prepare('UPDATE users SET avatar_url = $1 WHERE id = $2').run(avatarUrl, req.user.id);
-  
-  res.json({ success: true, avatar_url: avatarUrl });
+  try {
+    // Upload to Cloudinary
+    const avatarUrl = await uploadToCloudinary(req.file.path, 'revelio/avatars');
+    
+    // Delete local file after upload
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Error deleting local file:', err);
+    });
+    
+    await req.db.prepare('UPDATE users SET avatar_url = $1 WHERE id = $2').run(avatarUrl, req.user.id);
+    
+    res.json({ success: true, avatar_url: avatarUrl });
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    res.status(500).json({ error: 'Failed to upload avatar' });
+  }
 });
 
 module.exports = router;

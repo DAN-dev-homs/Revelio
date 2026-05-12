@@ -209,9 +209,23 @@ router.post('/books', cpUpload, async (req, res) => {
   if (!title || !author || !category || !duration_min || !level)
     return res.status(400).json({ error: 'Missing required fields' });
 
-  const cover_url = req.files?.['cover'] ? `/uploads/media/${req.files['cover'][0].filename}` : null;
-  const video_url = req.files?.['video'] ? `/uploads/media/${req.files['video'][0].filename}` : null;
-  const audio_url = req.files?.['audio'] ? `/uploads/media/${req.files['audio'][0].filename}` : null;
+  // Upload to Cloudinary
+  let cover_url = null, video_url = null, audio_url = null;
+  
+  if (req.files?.['cover']) {
+    cover_url = await uploadToCloudinary(req.files['cover'][0].path, 'revelio/books/covers');
+    fs.unlink(req.files['cover'][0].path, () => {});
+  }
+  if (req.files?.['video']) {
+    video_url = await uploadToCloudinary(req.files['video'][0].path, 'revelio/books/videos');
+    fs.unlink(req.files['video'][0].path, () => {});
+  }
+  if (req.files?.['audio']) {
+    audio_url = await uploadToCloudinary(req.files['audio'][0].path, 'revelio/books/audio');
+    fs.unlink(req.files['audio'][0].path, () => {});
+  }
+  
+  console.log('☁️ Cloudinary book upload - cover:', cover_url, 'video:', video_url, 'audio:', audio_url);
 
   const result = await req.db.prepare(`
     INSERT INTO books (title, author, cover_color, cover_url, category, duration_min, level, video_url, audio_url, summary, key_points, amazon_url)
@@ -257,9 +271,25 @@ router.put('/books/:id', cpUpload, async (req, res) => {
 
   const { title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url, tags } = req.body;
   
-  const cover_url = req.files?.['cover'] ? `/uploads/media/${req.files['cover'][0].filename}` : existingBook.cover_url;
-  const video_url = req.files?.['video'] ? `/uploads/media/${req.files['video'][0].filename}` : existingBook.video_url;
-  const audio_url = req.files?.['audio'] ? `/uploads/media/${req.files['audio'][0].filename}` : existingBook.audio_url;
+  // Upload to Cloudinary if new files provided
+  let cover_url = existingBook.cover_url;
+  let video_url = existingBook.video_url;
+  let audio_url = existingBook.audio_url;
+  
+  if (req.files?.['cover']) {
+    cover_url = await uploadToCloudinary(req.files['cover'][0].path, 'revelio/books/covers');
+    fs.unlink(req.files['cover'][0].path, () => {});
+  }
+  if (req.files?.['video']) {
+    video_url = await uploadToCloudinary(req.files['video'][0].path, 'revelio/books/videos');
+    fs.unlink(req.files['video'][0].path, () => {});
+  }
+  if (req.files?.['audio']) {
+    audio_url = await uploadToCloudinary(req.files['audio'][0].path, 'revelio/books/audio');
+    fs.unlink(req.files['audio'][0].path, () => {});
+  }
+  
+  console.log('☁️ Cloudinary book update - cover:', cover_url, 'video:', video_url, 'audio:', audio_url);
 
   await req.db.prepare(`
     UPDATE books 

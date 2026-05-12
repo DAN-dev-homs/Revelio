@@ -6,6 +6,7 @@ const { auth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // GET /api/community/posts
 router.get('/posts', auth, async (req, res) => {
@@ -168,8 +169,20 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 1
 router.post('/upload-image', auth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-  const imageUrl = `/uploads/media/${req.file.filename}`;
-  res.json({ success: true, image_url: imageUrl });
+  try {
+    // Upload to Cloudinary
+    const imageUrl = await uploadToCloudinary(req.file.path, 'revelio/posts');
+    
+    // Delete local file after upload
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error('Error deleting local file:', err);
+    });
+    
+    res.json({ success: true, image_url: imageUrl });
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
 });
 
 module.exports = router;
