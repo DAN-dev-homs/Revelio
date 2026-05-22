@@ -43,7 +43,11 @@ async function start() {
   // ── Gestion globale des erreurs ──────────────────────────
   app.use((err, _req, res, _next) => {
     console.error('[ERROR]', err.message || err);
-    res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+    if (res.headersSent) return;
+
+    const message = err.message || 'Internal Server Error';
+    const status = err.status || err.http_code || 500;
+    res.status(status).json({ error: message });
   });
 
   app.listen(PORT, () => {

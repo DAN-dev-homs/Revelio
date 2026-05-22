@@ -17,6 +17,41 @@ async function logActivity(db, userId, action, detail, ip) {
   } catch (e) { /* silently ignore */ }
 }
 
+function asyncHandler(fn) {
+  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
+function cleanupUploadedFiles(files) {
+  if (!files) return;
+  Object.values(files).flat().forEach((file) => {
+    if (file?.path) {
+      fs.unlink(file.path, (err) => {
+        if (err) console.error('Error deleting local upload:', err);
+      });
+    }
+  });
+}
+
+async function uploadBookFiles(files, existingBook = {}) {
+  const urls = {
+    cover_url: existingBook.cover_url || null,
+    video_url: existingBook.video_url || null,
+    audio_url: existingBook.audio_url || null
+  };
+
+  if (files?.['cover']) {
+    urls.cover_url = await uploadToCloudinary(files['cover'][0].path, 'revelio/books/covers');
+  }
+  if (files?.['video']) {
+    urls.video_url = await uploadToCloudinary(files['video'][0].path, 'revelio/books/videos');
+  }
+  if (files?.['audio']) {
+    urls.audio_url = await uploadToCloudinary(files['audio'][0].path, 'revelio/books/audio');
+  }
+
+  return urls;
+}
+
 // ── Dossier pour les médias des livres ───────────────────
 const MEDIA_DIR = path.join(__dirname, '..', 'uploads', 'media');
 if (!fs.existsSync(MEDIA_DIR)) fs.mkdirSync(MEDIA_DIR, { recursive: true });
@@ -205,28 +240,20 @@ const cpUpload = upload.fields([
   { name: 'audio', maxCount: 1 }
 ]);
 
-router.post('/books', cpUpload, handleUploadError, async (req, res) => {
+router.post('/books', cpUpload, handleUploadError, asyncHandler(async (req, res) => {
   const { title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url, tags } = req.body;
   if (!title || !author || !category || !duration_min || !level)
     return res.status(400).json({ error: 'Missing required fields' });
 
-  // Upload to Cloudinary
-  let cover_url = null, video_url = null, audio_url = null;
-  
-  if (req.files?.['cover']) {
-    cover_url = await uploadToCloudinary(req.files['cover'][0].path, 'revelio/books/covers');
-    fs.unlink(req.files['cover'][0].path, () => {});
+  let uploadedUrls;
+  try {
+    uploadedUrls = await uploadBookFiles(req.files);
+  } finally {
+    cleanupUploadedFiles(req.files);
   }
-  if (req.files?.['video']) {
-    video_url = await uploadToCloudinary(req.files['video'][0].path, 'revelio/books/videos');
-    fs.unlink(req.files['video'][0].path, () => {});
-  }
-  if (req.files?.['audio']) {
-    audio_url = await uploadToCloudinary(req.files['audio'][0].path, 'revelio/books/audio');
-    fs.unlink(req.files['audio'][0].path, () => {});
-  }
-  
-  console.log('☁️ Cloudinary book upload - cover:', cover_url, 'video:', video_url, 'audio:', audio_url);
+
+  const { cover_url, video_url, audio_url } = uploadedUrls;
+  console.log('Cloudinary book upload - cover:', cover_url, 'video:', video_url, 'audio:', audio_url);
 
   const result = await req.db.prepare(`
     INSERT INTO books (title, author, cover_color, cover_url, category, duration_min, level, video_url, audio_url, summary, key_points, amazon_url)
@@ -256,7 +283,7 @@ router.post('/books', cpUpload, handleUploadError, async (req, res) => {
   await logActivity(req.db, req.user.id, 'create_book', `Created book: "${title}"`, req.ip);
   const createdBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
   res.status(201).json(createdBook);
-});
+}));
 
 router.get('/books/:id', async (req, res) => {
   const book = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
@@ -265,32 +292,22 @@ router.get('/books/:id', async (req, res) => {
   res.json({ ...book, tags });
 });
 
-router.put('/books/:id', cpUpload, handleUploadError, async (req, res) => {
+router.put('/books/:id', cpUpload, handleUploadError, asyncHandler(async (req, res) => {
   const bookId = parseInt(req.params.id);
   const existingBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
   if (!existingBook) return res.status(404).json({ error: 'Book not found' });
 
   const { title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url, tags } = req.body;
   
-  // Upload to Cloudinary if new files provided
-  let cover_url = existingBook.cover_url;
-  let video_url = existingBook.video_url;
-  let audio_url = existingBook.audio_url;
-  
-  if (req.files?.['cover']) {
-    cover_url = await uploadToCloudinary(req.files['cover'][0].path, 'revelio/books/covers');
-    fs.unlink(req.files['cover'][0].path, () => {});
+  let uploadedUrls;
+  try {
+    uploadedUrls = await uploadBookFiles(req.files, existingBook);
+  } finally {
+    cleanupUploadedFiles(req.files);
   }
-  if (req.files?.['video']) {
-    video_url = await uploadToCloudinary(req.files['video'][0].path, 'revelio/books/videos');
-    fs.unlink(req.files['video'][0].path, () => {});
-  }
-  if (req.files?.['audio']) {
-    audio_url = await uploadToCloudinary(req.files['audio'][0].path, 'revelio/books/audio');
-    fs.unlink(req.files['audio'][0].path, () => {});
-  }
-  
-  console.log('☁️ Cloudinary book update - cover:', cover_url, 'video:', video_url, 'audio:', audio_url);
+
+  const { cover_url, video_url, audio_url } = uploadedUrls;
+  console.log('Cloudinary book update - cover:', cover_url, 'video:', video_url, 'audio:', audio_url);
 
   await req.db.prepare(`
     UPDATE books 
@@ -326,7 +343,7 @@ router.put('/books/:id', cpUpload, handleUploadError, async (req, res) => {
   await logActivity(req.db, req.user.id, 'update_book', `Updated book: "${title || existingBook.title}"`, req.ip);
   const updatedBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
   res.json(updatedBook);
-});
+}));
 
 router.delete('/books/:id', async (req, res) => {
   const book = await req.db.prepare('SELECT title FROM books WHERE id = ?').get(req.params.id);
