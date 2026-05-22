@@ -6,6 +6,39 @@ const { auth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const { uploadToCloudinary } = require('../config/cloudinary');
 
+function normalizeDateKey(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+function diffDays(fromDateKey, toDateKey) {
+  const [fromYear, fromMonth, fromDay] = fromDateKey.split('-').map(Number);
+  const [toYear, toMonth, toDay] = toDateKey.split('-').map(Number);
+  const fromTime = Date.UTC(fromYear, fromMonth - 1, fromDay);
+  const toTime = Date.UTC(toYear, toMonth - 1, toDay);
+  return Math.round((toTime - fromTime) / (1000 * 60 * 60 * 24));
+}
+
+function calculateStreakFromDates(rawDates) {
+  const dates = [...new Set(rawDates.map(normalizeDateKey).filter(Boolean))].sort().reverse();
+  if (!dates.length) return 0;
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const lastReadGap = diffDays(dates[0], todayKey);
+  if (lastReadGap > 1) return 0;
+
+  let streakDays = 1;
+  for (let i = 1; i < dates.length; i++) {
+    if (diffDays(dates[i], dates[i - 1]) === 1) {
+      streakDays++;
+    } else {
+      break;
+    }
+  }
+  return streakDays;
+}
+
 // GET /api/profile/me — profil complet
 router.get('/me', auth, async (req, res) => {
   try {
@@ -117,20 +150,34 @@ router.get('/me', auth, async (req, res) => {
       
       let dateQuery;
       if (dbType === 'postgres') {
-        dateQuery = `SELECT DISTINCT DATE(updated_at) as read_date 
-                     FROM reading_sessions 
+        dateQuery = `SELECT DISTINCT DATE(read_at) as read_date 
+                     FROM reading_activity 
                      WHERE user_id = $1 AND progress_pct > 0
                      ORDER BY read_date DESC`;
       } else {
         // SQLite - utiliser substr pour extraire la date (YYYY-MM-DD)
-        dateQuery = `SELECT DISTINCT substr(updated_at, 1, 10) as read_date 
-                     FROM reading_sessions 
+        dateQuery = `SELECT DISTINCT substr(read_at, 1, 10) as read_date 
+                     FROM reading_activity 
                      WHERE user_id = ? AND progress_pct > 0
                      ORDER BY read_date DESC`;
       }
       
-      const readDates = await req.db.prepare(dateQuery).all(req.user.id);
+      let readDates = await req.db.prepare(dateQuery).all(req.user.id);
+      if (readDates.length === 0) {
+        const fallbackQuery = (req.db.type || 'sqlite') === 'postgres'
+          ? `SELECT DISTINCT DATE(updated_at) as read_date
+             FROM reading_sessions
+             WHERE user_id = $1 AND progress_pct > 0
+             ORDER BY read_date DESC`
+          : `SELECT DISTINCT substr(updated_at, 1, 10) as read_date
+             FROM reading_sessions
+             WHERE user_id = ? AND progress_pct > 0
+             ORDER BY read_date DESC`;
+        readDates = await req.db.prepare(fallbackQuery).all(req.user.id);
+      }
       console.log('📅 Dates de lecture trouvées:', readDates.map(d => d.read_date));
+      streakDays = calculateStreakFromDates(readDates.map(d => d.read_date));
+      readDates = [];
       
       if (readDates.length > 0) {
         // Convertir les dates en objets Date pour faciliter la comparaison
@@ -146,11 +193,14 @@ router.get('/me', auth, async (req, res) => {
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         
         console.log('📊 Dernier jour de lecture:', lastReadDate.toISOString().split('T')[0]);
+        console.log('📊 Aujourd\'hui:', today.toISOString().split('T')[0]);
         console.log('📊 Différence en jours:', diffDays);
         
         // Si le dernier jour de lecture était il y a plus d'1 jour, le streak est cassé
+        // Mais on garde le streak si l'utilisateur a lu aujourd'hui (diffDays = 0) ou hier (diffDays = 1)
         if (diffDays > 1) {
           streakDays = 0;
+          console.log('🔴 Streak cassé - dernière lecture il y a plus de 1 jour');
         } else {
           // Calculer le streak en comptant les jours consécutifs
           streakDays = 1; // Au moins 1 jour (le dernier jour de lecture)
@@ -163,12 +213,16 @@ router.get('/me', auth, async (req, res) => {
             
             const dayDiff = (prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24);
             
+            console.log(`🔍 Comparaison: ${currDate.toISOString().split('T')[0]} -> ${prevDate.toISOString().split('T')[0]} (diff: ${dayDiff} jours)`);
+            
             if (dayDiff === 1) {
               streakDays++;
             } else {
               break;
             }
           }
+          
+          console.log('🟢 Streak actif:', streakDays, 'jours consécutifs');
         }
       }
       

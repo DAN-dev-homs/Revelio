@@ -142,6 +142,14 @@ async function ensureSchema(db) {
         updated_at   TEXT    DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS reading_activity (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        book_id      INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        progress_pct INTEGER DEFAULT 0,
+        read_at      TEXT    DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS saved_books (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -358,6 +366,14 @@ async function ensureSchema(db) {
         progress_pct INTEGER DEFAULT 0,
         started_at   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS reading_activity (
+        id           SERIAL PRIMARY KEY,
+        user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        book_id      INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        progress_pct INTEGER DEFAULT 0,
+        read_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS saved_books (

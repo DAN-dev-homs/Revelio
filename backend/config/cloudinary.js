@@ -14,14 +14,23 @@ cloudinary.config({
 // Upload file to Cloudinary
 async function uploadToCloudinary(filePath, folder = 'revelio') {
   try {
-    const result = await cloudinary.uploader.upload(filePath, {
+    // Detect if file is video based on extension
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm'];
+    const isVideo = videoExtensions.some(ext => filePath.toLowerCase().endsWith(ext));
+    
+    const uploadOptions = {
       folder: folder,
-      resource_type: 'auto',
-      transformation: [
+      resource_type: isVideo ? 'video' : 'auto',
+      chunk_size: 6000000, // 6MB chunks for large files
+      transformation: isVideo ? [] : [
         { quality: 'auto:good' },
         { fetch_format: 'auto' }
       ]
-    });
+    };
+
+    const result = isVideo
+      ? await cloudinary.uploader.upload_large(filePath, uploadOptions)
+      : await cloudinary.uploader.upload(filePath, uploadOptions);
     
     console.log('☁️ Cloudinary upload success:', result.secure_url);
     return result.secure_url;

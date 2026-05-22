@@ -32,11 +32,12 @@ const upload = multer({
   storage, 
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
   fileFilter: (req, file, cb) => {
-    // Accepter les images
-    if (file.mimetype.startsWith('image/')) {
+    const allowedMediaTypes = ['image/', 'video/', 'audio/'];
+
+    if (allowedMediaTypes.some(type => file.mimetype.startsWith(type))) {
       cb(null, true);
     } else {
-      cb(new Error('Seules les images sont autorisées'), false);
+      cb(new Error('Seuls les fichiers image, video ou audio sont autorises'), false);
     }
   }
 }); // 100MB
@@ -204,7 +205,7 @@ const cpUpload = upload.fields([
   { name: 'audio', maxCount: 1 }
 ]);
 
-router.post('/books', cpUpload, async (req, res) => {
+router.post('/books', cpUpload, handleUploadError, async (req, res) => {
   const { title, author, cover_color, category, duration_min, level, summary, key_points, amazon_url, tags } = req.body;
   if (!title || !author || !category || !duration_min || !level)
     return res.status(400).json({ error: 'Missing required fields' });
@@ -264,7 +265,7 @@ router.get('/books/:id', async (req, res) => {
   res.json({ ...book, tags });
 });
 
-router.put('/books/:id', cpUpload, async (req, res) => {
+router.put('/books/:id', cpUpload, handleUploadError, async (req, res) => {
   const bookId = parseInt(req.params.id);
   const existingBook = await req.db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
   if (!existingBook) return res.status(404).json({ error: 'Book not found' });

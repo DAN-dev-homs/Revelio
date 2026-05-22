@@ -46,6 +46,16 @@ async function updateUserBadge(db, userId) {
   }
 }
 
+async function recordReadingActivity(db, userId, bookId, progressPct) {
+  try {
+    await db.prepare(
+      'INSERT INTO reading_activity (user_id, book_id, progress_pct) VALUES (?, ?, ?)'
+    ).run(userId, bookId, progressPct);
+  } catch (e) {
+    console.log('Reading activity table unavailable, skipping activity log:', e.message);
+  }
+}
+
 // GET /api/books/categories — catégories disponibles pour les filtres
 router.get('/categories', auth, async (req, res) => {
   const categories = await req.db.prepare('SELECT name FROM categories ORDER BY name ASC').all();
@@ -173,10 +183,16 @@ router.patch('/:id/progress', auth, async (req, res) => {
     'SELECT id, progress_pct FROM reading_sessions WHERE user_id = ? AND book_id = ?'
   ).get(userId, bookId);
 
-  const pct = parseInt(progress_pct, 10) || 0;
+  const rawPct = parseInt(progress_pct, 10) || 0;
+  const pct = Math.max(0, Math.min(100, rawPct));
+  await recordReadingActivity(req.db, userId, bookId, pct);
 
   if (session) {
-    if (session.progress_pct < 100 && pct === 100) {
+    const previousPct = Number(session.progress_pct) || 0;
+    const nextPct = Math.max(previousPct, pct);
+    const completedNow = previousPct < 100 && nextPct === 100;
+
+    if (completedNow) {
       let book;
       try {
         book = await req.db.prepare('SELECT reading_time_min FROM books WHERE id = ?').get(bookId);
@@ -187,13 +203,16 @@ router.patch('/:id/progress', auth, async (req, res) => {
       }
       if (book) {
         await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, userId);
-        await updateUserBadge(req.db, userId);
       }
     }
     await req.db.prepare(
       `UPDATE reading_sessions SET progress_pct = ?, updated_at = CURRENT_TIMESTAMP
        WHERE user_id = ? AND book_id = ?`
-    ).run(pct, userId, bookId);
+    ).run(nextPct, userId, bookId);
+
+    if (completedNow) {
+      await updateUserBadge(req.db, userId);
+    }
   } else {
     if (pct === 100) {
       let book;
@@ -206,12 +225,15 @@ router.patch('/:id/progress', auth, async (req, res) => {
       }
       if (book) {
         await req.db.prepare('UPDATE users SET total_hours = total_hours + ? WHERE id = ?').run((book.reading_time_min || 5) / 60, userId);
-        await updateUserBadge(req.db, userId);
       }
     }
     await req.db.prepare(
       'INSERT INTO reading_sessions (user_id, book_id, progress_pct) VALUES (?, ?, ?)'
     ).run(userId, bookId, pct);
+
+    if (pct === 100) {
+      await updateUserBadge(req.db, userId);
+    }
   }
   res.json({ success: true });
 });
