@@ -80,8 +80,19 @@ const NotificationPanel = (() => {
   }
 
   async function refreshUnreadBadge() {
+    if (!api.getToken()) {
+      stopAutoRefresh();
+      updateHomeBadge(0);
+      return;
+    }
+
     try {
       const data = await api.getNotifications();
+      if (!data) {
+        stopAutoRefresh();
+        updateHomeBadge(0);
+        return;
+      }
       const unread = data?.unreadCount || 0;
       updateHomeBadge(unread);
       if (unread > lastUnreadCount) playNotificationSound();
@@ -106,6 +117,8 @@ const NotificationPanel = (() => {
   }
 
   async function openPanel() {
+    if (!api.getToken()) return;
+
     if (!panelEl) init();
     panelEl.classList.add('active');
     playNotificationSound(); // Jouer le son d'ouverture / de notification

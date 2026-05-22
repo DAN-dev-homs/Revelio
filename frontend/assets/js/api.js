@@ -74,7 +74,14 @@ const api = (() => {
       if (res.status === 401) {
         console.log('🔒 Token expiré ou invalide, redirection vers login');
         clearToken();
-        window.location.hash = '#login';
+        if (window.NotificationPanel) {
+          window.NotificationPanel.stopAutoRefresh();
+        }
+        if (window.App && typeof window.App.showLoginScreen === 'function') {
+          window.App.showLoginScreen();
+        } else {
+          window.location.hash = '';
+        }
         return null;
       }
       
