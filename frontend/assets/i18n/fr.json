@@ -10,19 +10,19 @@
     "home": {
       "welcome": "Bon retour",
       "subtitle": "Continuez votre parcours d'enseignements chrétiens",
-      "search_placeholder": "Rechercher des cours...",
+      "search_placeholder": "Rechercher des enseignements...",
       "streak_title": "Jours consécutifs",
       "streak_sub": "Continuez ce bel effort !",
       "categories_title": "Explorer par catégorie",
-      "continue_reading": "Continuer le cours",
+      "continue_reading": "Continuer l'enseignement",
       "healing": "Guérison",
       "faith": "Foi",
       "identity": "Identité",
       "discipline": "Discipline"
     },
     "explore": {
-      "title": "Cours chrétiens",
-      "search_books": "Rechercher un cours...",
+      "title": "Enseignements chrétiens",
+      "search_books": "Rechercher un enseignement...",
       "search_author": "Rechercher par enseignant",
       "filter_all": "Tous",
       "filter_healing": "Guérison",
@@ -37,7 +37,7 @@
       "level_beginner": "Débutant",
       "level_intermediate": "Intermédiaire",
       "level_advanced": "Avancé",
-      "books_count": "cours",
+      "books_count": "enseignements",
       "save": "Sauvegarder",
       "saved": "Sauvegardé"
     },
@@ -69,11 +69,11 @@
     },
     "profile": {
       "title": "Profil",
-      "books_completed": "Cours Terminés",
-      "hours_spent": "Heures de cours",
+      "books_completed": "Enseignements terminés",
+      "hours_spent": "Heures d'enseignement",
       "current_streak": "Série Actuelle",
       "streak_unit": "jours",
-      "saved_books": "Cours Sauvegardés",
+      "saved_books": "Enseignements sauvegardés",
       "settings": "Paramètres",
       "logout": "Se déconnecter"
     },

@@ -30,7 +30,7 @@ const BookDetailPage = (() => {
       container.innerHTML = buildLayout(displayBook);
       bindEvents(container, currentBook);
     } catch (err) {
-      container.innerHTML = `<div class="empty-state"><p>Impossible de charger ce cours.</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p>Impossible de charger cet enseignement.</p></div>`;
     }
   }
 
@@ -94,7 +94,7 @@ const BookDetailPage = (() => {
         <!-- 2. VIDÉO (Format Prioritaire) -->
         ${b.video_url ? `
           <div style="margin-bottom: 32px;" id="section-video">
-            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Vidéo du cours</h3>
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Vidéo de l'enseignement</h3>
             <video id="book-video" controls poster="${b.thumbnail_url || ''}" style="width: 100%; border-radius: 12px; background: #000; aspect-ratio: 16/9; object-fit: cover;">
               <source src="${b.video_url}" type="video/mp4">
               Votre navigateur ne supporte pas la vidéo.
@@ -169,7 +169,7 @@ const BookDetailPage = (() => {
         ${b.amazon_url ? `
           <div style="margin-bottom: 32px; text-align: center; padding: 24px; border: 1px solid var(--border-color); border-radius: 12px;">
             <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-              Cet enseignement est une introduction. Le cours complet vous accompagne vers une mise en pratique plus profonde.
+              Cet enseignement est une introduction. L'enseignement complet vous accompagne vers une mise en pratique plus profonde.
             </p>
             <a href="${b.amazon_url}" target="_blank" class="btn-primary" style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none;">
               Accéder à la ressource complète
@@ -247,7 +247,7 @@ const BookDetailPage = (() => {
     // Partage
     container.querySelector('#book-share-btn').addEventListener('click', () => {
       // Simulation de copie de lien
-      navigator.clipboard.writeText(`Découvre ce cours chrétien : ${b.title} sur Revelio !`).then(() => {
+      navigator.clipboard.writeText(`Découvre cet enseignement chrétien : ${b.title} sur Revelio !`).then(() => {
         alert('Lien copié dans le presse-papier !');
       });
     });
@@ -444,7 +444,7 @@ const BookDetailPage = (() => {
           cursor: pointer;
           font-size: 12px;
           font-weight: 600;
-        ">Commencer le cours</button>
+        ">Commencer l'enseignement</button>
         <button id="debug-save-btn" style="
           margin-top: 4px;
           padding: 4px 8px;
@@ -476,7 +476,7 @@ const BookDetailPage = (() => {
           startBtn.style.color = 'white';
         } else if (timeRemaining === 60) {
           timeDisplay.textContent = formatTime(timeRemaining);
-          startBtn.textContent = 'Commencer le cours';
+          startBtn.textContent = 'Commencer l\'enseignement';
           startBtn.style.background = 'white';
           startBtn.style.color = 'var(--primary)';
         } else {
@@ -522,9 +522,9 @@ const BookDetailPage = (() => {
               clearTimerState(); // Nettoyer l'état quand terminé
               if (timerIndicator) {
                 timerIndicator.innerHTML = `
-                  <div style="margin-bottom: 4px;">✅ Cours terminé</div>
+                  <div style="margin-bottom: 4px;">✅ Enseignement terminé</div>
                   <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                  <div style="font-size: 12px; margin-top: 4px;">Cours marqué comme terminé</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Enseignement marqué comme terminé</div>
                 `;
               }
             }
@@ -569,9 +569,9 @@ const BookDetailPage = (() => {
               isActive = false;
               if (timerIndicator) {
                 timerIndicator.innerHTML = `
-                  <div style="margin-bottom: 4px;">✅ Cours terminé</div>
+                  <div style="margin-bottom: 4px;">✅ Enseignement terminé</div>
                   <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                  <div style="font-size: 12px; margin-top: 4px;">Cours marqué comme terminé</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Enseignement marqué comme terminé</div>
                 `;
               }
             } else {
@@ -586,9 +586,9 @@ const BookDetailPage = (() => {
             isActive = false;
             if (timerIndicator) {
               timerIndicator.innerHTML = `
-                <div style="margin-bottom: 4px;">✅ Cours terminé</div>
+                <div style="margin-bottom: 4px;">✅ Enseignement terminé</div>
                 <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                <div style="font-size: 12px; margin-top: 4px;">Cours marqué comme terminé</div>
+                <div style="font-size: 12px; margin-top: 4px;">Enseignement marqué comme terminé</div>
               `;
             }
           } else {

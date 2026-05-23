@@ -1,7 +1,7 @@
 {
   "name": "Revelio",
   "short_name": "Revelio",
-  "description": "Plateforme de croissance spirituelle par des cours chrétiens.",
+  "description": "Plateforme de croissance spirituelle par des enseignements chrétiens.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

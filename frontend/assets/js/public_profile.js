@@ -105,7 +105,7 @@ const PublicProfilePage = (() => {
             </svg>
           </div>
           <div class="stat-value">${profile.books_completed || 0}</div>
-          <div class="stat-label">Cours terminés</div>
+          <div class="stat-label">Enseignements terminés</div>
         </div>
 
         <div class="stat-card">
@@ -117,7 +117,7 @@ const PublicProfilePage = (() => {
             </svg>
           </div>
           <div class="stat-value">${Math.round(profile.total_hours || 0)}</div>
-          <div class="stat-label">Heures de cours</div>
+          <div class="stat-label">Heures d'enseignement</div>
         </div>
 
         <div class="stat-card">

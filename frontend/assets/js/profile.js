@@ -176,7 +176,7 @@ const ProfilePage = (() => {
         </div>
       </div>
 
-      <!-- Cours sauvegardés -->
+      <!-- Enseignements sauvegardés -->
       <h2 class="section-title" data-i18n="profile.saved_books">${i18n.t('profile.saved_books')}</h2>
       ${savedBooks.length > 0 ? `
         <div class="h-scroll stagger-children" style="margin-bottom:var(--spacing-2xl)">
@@ -197,7 +197,7 @@ const ProfilePage = (() => {
               display: flex;
               align-items: center;
               justify-content: center;
-            " title="Supprimer des cours sauvegardés">×</button>
+            " title="Supprimer des enseignements sauvegardés">×</button>
             <div style="width:40px; height:56px; background:${b.cover_color}; border-radius:4px; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:600;">${b.title.substring(0,2).toUpperCase()}</div>
             <div style="flex:1;">
               <div style="font-weight:600; font-size:14px; margin-bottom:2px;">${b.title}</div>
@@ -207,7 +207,7 @@ const ProfilePage = (() => {
         `).join('')}
         </div>` : `
         <div class="empty-state" style="margin-bottom:var(--spacing-2xl)">
-          <p>Aucun cours sauvegardé</p>
+          <p>Aucun enseignement sauvegardé</p>
         </div>`
       }
 
@@ -368,7 +368,7 @@ const ProfilePage = (() => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const bookId = btn.dataset.bookId;
-        if (confirm('Êtes-vous sûr de vouloir supprimer ce cours sauvegardé ?')) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cet enseignement sauvegardé ?')) {
           try {
             await api.deleteSaveBook(bookId);
             // Recharger les cours sauvegardés
@@ -377,7 +377,7 @@ const ProfilePage = (() => {
             renderCurrentView(container);
           } catch (error) {
             console.error('Failed to unsave book:', error);
-            alert('Erreur lors de la suppression du cours sauvegardé');
+            alert('Erreur lors de la suppression de l\'enseignement sauvegardé');
           }
         }
       });
