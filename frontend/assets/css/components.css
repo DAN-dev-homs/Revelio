@@ -678,3 +678,35 @@
   width: 18px;
   height: 18px;
 }
+
+/* ── Toast partage ──────────────────────────────────────── */
+.share-toast {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 16px));
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  z-index: 100000;
+  max-width: min(90vw, 360px);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: #fff;
+  background: #1a1a1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+}
+.share-toast.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+.share-toast.is-error {
+  background: #b91c1c;
+  border-color: rgba(255, 255, 255, 0.2);
+}

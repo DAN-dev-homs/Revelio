@@ -15,31 +15,48 @@ const Share = (() => {
     return `${baseUrl()}/s/post/${postId}`;
   }
 
-  function showToast(message, isError = false) {
+  const TOAST_VISIBLE_MS = 2500;
+
+  function getToastEl() {
     let el = document.getElementById('share-toast');
     if (!el) {
       el = document.createElement('div');
       el.id = 'share-toast';
-      el.style.cssText = `
-        position: fixed; left: 50%; bottom: calc(var(--nav-height, 68px) + 16px);
-        transform: translateX(-50%) translateY(120%);
-        background: #1a1a1e; color: #fff; padding: 12px 20px;
-        border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 10000;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.1);
-        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-        max-width: min(90vw, 360px); text-align: center; pointer-events: none;
-      `;
+      el.className = 'share-toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
       document.body.appendChild(el);
     }
+    return el;
+  }
+
+  function hideToast(el) {
+    el.classList.remove('is-visible');
+    clearTimeout(el._removeTimer);
+    el._removeTimer = setTimeout(() => {
+      if (!el.classList.contains('is-visible')) {
+        el.textContent = '';
+      }
+    }, 350);
+  }
+
+  function showToast(message, isError = false) {
+    const el = getToastEl();
     el.textContent = message;
-    el.style.background = isError ? '#b91c1c' : '#1a1a1e';
-    requestAnimationFrame(() => {
-      el.style.transform = 'translateX(-50%) translateY(0)';
-    });
+    el.classList.toggle('is-error', isError);
+
     clearTimeout(el._hideTimer);
-    el._hideTimer = setTimeout(() => {
-      el.style.transform = 'translateX(-50%) translateY(120%)';
-    }, 2800);
+    clearTimeout(el._removeTimer);
+    el.classList.remove('is-visible');
+
+    // Reflow pour relancer l’animation si le toast est réaffiché rapidement
+    void el.offsetWidth;
+
+    requestAnimationFrame(() => {
+      el.classList.add('is-visible');
+    });
+
+    el._hideTimer = setTimeout(() => hideToast(el), TOAST_VISIBLE_MS);
   }
 
   async function copyToClipboard(text) {
