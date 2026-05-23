@@ -7,7 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const { cloudinary, uploadToCloudinary } = require('../config/cloudinary');
+const { cloudinary, uploadToCloudinary, VIDEO_EAGER_STRING } = require('../config/cloudinary');
 
 // ── Helper : log d'activité ──────────────────────────────
 async function logActivity(db, userId, action, detail, ip) {
@@ -228,8 +228,13 @@ router.get('/stats', async (req, res) => {
 // Signature pour upload direct navigateur → Cloudinary (évite timeout 502 sur grosses vidéos)
 router.get('/upload-signature', (req, res) => {
   const folder = req.query.folder || 'revelio';
+  const isVideo = req.query.type === 'video';
   const timestamp = Math.round(Date.now() / 1000);
   const paramsToSign = { timestamp, folder };
+
+  if (isVideo) {
+    paramsToSign.eager = VIDEO_EAGER_STRING;
+  }
 
   const signature = cloudinary.utils.api_sign_request(
     paramsToSign,
@@ -240,6 +245,7 @@ router.get('/upload-signature', (req, res) => {
     signature,
     timestamp,
     folder,
+    eager: isVideo ? VIDEO_EAGER_STRING : undefined,
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY
   });

@@ -335,8 +335,9 @@ function openBookModal() {
 }
 
 async function uploadMediaDirectToCloudinary(file, folder, resourceType) {
+  const typeParam = resourceType === 'video' ? '&type=video' : '';
   const signRes = await fetch(
-    `${API}/admin/upload-signature?folder=${encodeURIComponent(folder)}`,
+    `${API}/admin/upload-signature?folder=${encodeURIComponent(folder)}${typeParam}`,
     { headers: { Authorization: `Bearer ${adminToken}` } }
   );
   const sig = await signRes.json().catch(() => ({}));
@@ -352,11 +353,16 @@ async function uploadMediaDirectToCloudinary(file, folder, resourceType) {
   fd.append('timestamp', String(sig.timestamp));
   fd.append('signature', sig.signature);
   fd.append('folder', sig.folder);
+  if (sig.eager) fd.append('eager', sig.eager);
 
   const uploadRes = await fetch(endpoint, { method: 'POST', body: fd });
   const data = await uploadRes.json().catch(() => ({}));
   if (!uploadRes.ok) {
     throw new Error(data.error?.message || data.error || 'Échec de l\'upload vers Cloudinary');
+  }
+
+  if (resourceType === 'video' && data.eager?.length > 0 && data.eager[0].secure_url) {
+    return data.eager[0].secure_url;
   }
   return data.secure_url;
 }
@@ -417,7 +423,7 @@ async function saveBook() {
 
   try {
     if (videoFile) {
-      btn.textContent = 'Upload vidéo...';
+      btn.textContent = 'Compression & upload vidéo...';
       formData.append('video_url', await uploadMediaDirectToCloudinary(videoFile, 'revelio/books/videos', 'video'));
     }
     if (coverFile) {

@@ -341,7 +341,11 @@
       </div>
       <div class="form-row">
         <div class="form-group"><label>🖼️ Image de couverture</label><input type="file" id="b-cover" class="form-input" accept="image/*"></div>
-        <div class="form-group"><label>🎥 Vidéo MP4</label><input type="file" id="b-video" class="form-input" accept="video/mp4"></div>
+        <div class="form-group">
+          <label>🎥 Vidéo (MP4, MOV, WebM…)</label>
+          <input type="file" id="b-video" class="form-input" accept="video/*">
+          <p style="font-size:12px;color:var(--muted);margin-top:6px;">Les vidéos lourdes sont automatiquement compressées (max 1280px, H.264) par Cloudinary à l'upload.</p>
+        </div>
       </div>
       <div class="form-group"><label>🎧 Audio MP3</label><input type="file" id="b-audio" class="form-input" accept="audio/*"></div>
       <div class="form-group"><label>Enseignement (Markdown)</label><textarea id="b-summary" class="form-input" rows="4" placeholder="Contenu détaillé de l'enseignement..."></textarea></div>
