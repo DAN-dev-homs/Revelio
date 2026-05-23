@@ -9,6 +9,7 @@ const path   = require('path');
 
 const DB_PATH = path.join(__dirname, 'revelio.db');
 const DATABASE_URL = process.env.DATABASE_URL;
+const { ensurePerformanceIndexes } = require('./database/indexes');
 
 function convertQuestionMarks(sql) {
   let index = 0;
@@ -605,11 +606,15 @@ async function initDB() {
     const useSsl = DATABASE_URL.includes('sslmode=require') || process.env.NODE_ENV === 'production';
     const pool = new Pool({
       connectionString: DATABASE_URL,
-      ssl: useSsl ? { rejectUnauthorized: false } : false
+      ssl: useSsl ? { rejectUnauthorized: false } : false,
+      max: parseInt(process.env.PG_POOL_MAX || '20', 10),
+      idleTimeoutMillis: parseInt(process.env.PG_IDLE_TIMEOUT || '30000', 10),
+      connectionTimeoutMillis: parseInt(process.env.PG_CONNECT_TIMEOUT || '10000', 10)
     });
     await pool.connect().then(client => client.release());
     const db = createPostgresClient(pool);
     await ensureSchema(db);
+    await ensurePerformanceIndexes(db);
     await ensureAdminUser(db);
     const count = await db.prepare('SELECT COUNT(*) as c FROM users').get();
     if (!count || !count.c) await seedData(db);
@@ -618,6 +623,7 @@ async function initDB() {
 
   const db = createSqliteClient();
   await ensureSchema(db);
+  await ensurePerformanceIndexes(db);
   await ensureAdminUser(db);
   const count = await db.prepare('SELECT COUNT(*) as c FROM users').get();
   if (!count || !count.c) await seedData(db);

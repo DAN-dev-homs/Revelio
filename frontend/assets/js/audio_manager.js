@@ -119,14 +119,21 @@ const AudioManager = (() => {
   // --- UI du Mini-Player ---
 
   function showMiniPlayer() {
-    miniPlayerEl.classList.add('active');
-    // On ajoute un padding dynamique au conteneur principal pour pas que le mini-player cache du contenu
-    document.getElementById('pages-container').style.paddingBottom = '60px'; 
+    miniPlayerEl.style.display = 'flex';
+    requestAnimationFrame(() => miniPlayerEl.classList.add('active'));
+    const container = document.getElementById('pages-container');
+    if (container) container.style.paddingBottom = '72px';
   }
 
   function hideMiniPlayer() {
     miniPlayerEl.classList.remove('active');
-    document.getElementById('pages-container').style.paddingBottom = '0';
+    const container = document.getElementById('pages-container');
+    if (container) container.style.paddingBottom = '0';
+    setTimeout(() => {
+      if (!miniPlayerEl.classList.contains('active')) {
+        miniPlayerEl.style.display = 'none';
+      }
+    }, 400);
   }
 
   function updateMiniPlayerUI() {

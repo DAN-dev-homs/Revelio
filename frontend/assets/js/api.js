@@ -112,9 +112,11 @@ const api = (() => {
     register: (name, email, password) => post('/auth/register', { name, email, password }),
 
     // Books
-    getBooks:       (filters={})=> {
+    getBooks:       async (filters = {}) => {
       const q = new URLSearchParams(filters).toString();
-      return get(`/books?${q}`);
+      const data = await get(`/books?${q}`);
+      if (Array.isArray(data)) return normalizeMediaUrls(data);
+      return normalizeMediaUrls(data.books || []);
     },
     getBookCategories: ()        => get('/books/categories'),
     getBookDetails: (id)        => get(`/books/${id}`),
@@ -150,6 +152,7 @@ const api = (() => {
 
     // Notifications
     getNotifications:      () => get('/notifications'),
+    getUnreadNotificationCount: () => get('/notifications/unread-count'),
     markNotificationsRead: () => patch('/notifications/read-all', {}),
 
     // Discover

@@ -203,8 +203,9 @@ const App = (() => {
       b.classList.toggle('active', b.dataset.page === page);
     });
 
-    // Masquer toutes les pages
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.remove('active', 'page-enter');
+    });
 
     await loadPage(page, params);
   }
@@ -221,7 +222,7 @@ const App = (() => {
 
     el.innerHTML = `<div class="flex items-center justify-center" style="min-height:60vh">
       <div class="spinner"></div></div>`;
-    el.classList.add('active');
+    el.classList.add('active', 'page-enter');
 
     try {
       console.log('📋 Rendu de la page:', page);

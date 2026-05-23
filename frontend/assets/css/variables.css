@@ -5,15 +5,21 @@
 
 :root {
   /* ── Couleurs de fond ─────────────────────────────────── */
-  --bg-primary:    #111111;   /* Fond principal (noir profond) */
-  --bg-surface:    #1C1C1C;   /* Surface des cards */
-  --bg-surface-2:  #242424;   /* Surface secondaire (inputs, etc.) */
-  --bg-surface-3:  #2E2E2E;   /* Surface tertiaire (hover) */
+  --bg-primary:    #0A0A0B;
+  --bg-elevated:   #121214;
+  --bg-surface:    #1A1A1E;
+  --bg-surface-2:  #232328;
+  --bg-surface-3:  #2C2C33;
+  --bg-glass:      rgba(26, 26, 30, 0.72);
 
   /* ── Couleurs d'accent ────────────────────────────────── */
-  --accent-red:    #E53935;   /* Rouge principal (streak, CTA) */
-  --accent-red-2:  #EF5350;   /* Rouge hover */
-  --accent-red-bg: #3D1C1C;   /* Fond rouge léger */
+  --accent-red:    #E53935;
+  --accent-red-2:  #FF5252;
+  --accent-red-bg: rgba(229, 57, 53, 0.12);
+  --gradient-brand: linear-gradient(135deg, #E53935 0%, #C62828 50%, #8E0000 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+  --gradient-mesh: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(229,57,53,0.15), transparent),
+                   radial-gradient(ellipse 60% 40% at 100% 0%, rgba(76,175,147,0.08), transparent);
   --accent-mint:   #4CAF93;   /* Mint/Teal (couvertures cours) */
   --accent-blue:   #2563EB;   /* Bleu (topic Anxiety) */
   --accent-purple: #7C3AED;   /* Violet (topic genre) */
@@ -58,20 +64,22 @@
   --font-weight-bold:     700;
 
   /* ── Ombres ───────────────────────────────────────────── */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg:  0 8px 24px rgba(0,0,0,0.6);
-  --shadow-red: 0 4px 20px rgba(229,57,53,0.35);
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.35);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.45);
+  --shadow-lg:  0 16px 40px rgba(0,0,0,0.55);
+  --shadow-red: 0 8px 28px rgba(229,57,53,0.35);
+  --shadow-glow: 0 0 0 1px rgba(255,255,255,0.06);
 
   /* ── Transitions ──────────────────────────────────────── */
   --transition-fast:   150ms ease;
   --transition-normal: 250ms ease;
   --transition-slow:   400ms ease;
-  --transition-page:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-page:   320ms cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ── Bottom nav ───────────────────────────────────────── */
-  --nav-height: 64px;
-  --nav-bg:     #161616;
+  --nav-height: 68px;
+  --nav-bg:     rgba(18, 18, 20, 0.92);
 
   /* ── Layout ───────────────────────────────────────────── */
   --max-width:  480px;      /* Largeur max (mobile-first) */

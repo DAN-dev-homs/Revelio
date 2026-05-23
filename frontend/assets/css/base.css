@@ -19,6 +19,8 @@ html {
 body {
   font-family: var(--font-family);
   background-color: var(--bg-primary);
+  background-image: var(--gradient-mesh);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
@@ -40,7 +42,8 @@ a       { text-decoration: none; color: inherit; }
   max-width: var(--max-width);
   margin: 0 auto;
   position: relative;
-  background: var(--bg-primary);
+  background: transparent;
+  box-shadow: 0 0 80px rgba(0,0,0,0.4);
 }
 
 /* ── Pages (contenu scrollable) ─────────────────────────── */
@@ -103,4 +106,38 @@ p  { font-size: var(--font-md);  line-height: 1.6; }
 .overlay.active {
   opacity: 1;
   pointer-events: all;
+}
+
+/* ── Splash screen ──────────────────────────────────────── */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  background-image: var(--gradient-mesh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 16px;
+}
+.splash-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+.splash-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  animation: fadeIn 400ms ease 200ms both;
+}
+.splash-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  animation: fadeIn 400ms ease 350ms both;
+}
+.splash-spinner {
+  margin-top: 8px;
+  animation: fadeIn 400ms ease 500ms both;
 }

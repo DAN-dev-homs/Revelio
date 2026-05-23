@@ -6,6 +6,8 @@ const NotificationPanel = (() => {
   let panelEl = null;
   let refreshInterval = null;
   let lastUnreadCount = 0;
+  const POLL_VISIBLE_MS = 60_000;
+  const POLL_HIDDEN_MS = 180_000;
 
   function playNotificationSound() {
     try {
@@ -87,7 +89,7 @@ const NotificationPanel = (() => {
     }
 
     try {
-      const data = await api.getNotifications();
+      const data = await api.getUnreadNotificationCount();
       if (!data) {
         stopAutoRefresh();
         updateHomeBadge(0);
@@ -102,18 +104,35 @@ const NotificationPanel = (() => {
     }
   }
 
+  function scheduleNextPoll() {
+    const delay = document.hidden ? POLL_HIDDEN_MS : POLL_VISIBLE_MS;
+    refreshInterval = setTimeout(async () => {
+      await refreshUnreadBadge();
+      scheduleNextPoll();
+    }, delay);
+  }
+
   function startAutoRefresh() {
     if (!panelEl) init();
     stopAutoRefresh();
     refreshUnreadBadge();
-    refreshInterval = setInterval(refreshUnreadBadge, 15000);
+    scheduleNextPoll();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }
+
+  function onVisibilityChange() {
+    if (!api.getToken()) return;
+    refreshUnreadBadge();
+    stopAutoRefresh();
+    scheduleNextPoll();
   }
 
   function stopAutoRefresh() {
     if (refreshInterval) {
-      clearInterval(refreshInterval);
+      clearTimeout(refreshInterval);
       refreshInterval = null;
     }
+    document.removeEventListener('visibilitychange', onVisibilityChange);
   }
 
   async function openPanel() {

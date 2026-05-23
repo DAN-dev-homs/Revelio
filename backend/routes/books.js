@@ -62,30 +62,43 @@ router.get('/categories', auth, async (req, res) => {
   res.json(categories.map(c => c.name));
 });
 
-// GET /api/books — liste filtrée
+// GET /api/books — liste filtrée (pagination optionnelle)
 router.get('/', auth, async (req, res) => {
   const { category, level, duration, q, author } = req.query;
-  let sql = 'SELECT * FROM books WHERE 1=1';
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+  const offset = (page - 1) * limit;
+
+  let where = 'WHERE 1=1';
   const params = [];
 
-  if (category && category !== 'all') { sql += ' AND category = ?'; params.push(category); }
-  if (level    && level    !== 'all') { sql += ' AND level = ?';    params.push(level); }
-  if (author) { sql += ' AND LOWER(author) LIKE ?'; params.push(`%${author.toLowerCase()}%`); }
-  if (q)      { sql += ' AND LOWER(title)  LIKE ?'; params.push(`%${q.toLowerCase()}%`); }
+  if (category && category !== 'all') { where += ' AND category = ?'; params.push(category); }
+  if (level && level !== 'all') { where += ' AND level = ?'; params.push(level); }
+  if (author) { where += ' AND LOWER(author) LIKE ?'; params.push(`%${author.toLowerCase()}%`); }
+  if (q) { where += ' AND LOWER(title) LIKE ?'; params.push(`%${q.toLowerCase()}%`); }
 
-  if (duration === 'lt20') { sql += ' AND duration_min < 20'; }
-  else if (duration === '20-30') { sql += ' AND duration_min BETWEEN 20 AND 30'; }
-  else if (duration === 'gt30')  { sql += ' AND duration_min > 30'; }
+  if (duration === 'lt20') { where += ' AND duration_min < 20'; }
+  else if (duration === '20-30') { where += ' AND duration_min BETWEEN 20 AND 30'; }
+  else if (duration === 'gt30') { where += ' AND duration_min > 30'; }
 
-  sql += ' ORDER BY title ASC';
-  const books = await req.db.prepare(sql).all(...params);
+  const countRow = await req.db.prepare(`SELECT COUNT(*) as c FROM books ${where}`).get(...params);
+  const total = countRow?.c || 0;
 
-  // Ajouter si le livre est sauvegardé par l'utilisateur
+  const books = await req.db.prepare(
+    `SELECT * FROM books ${where} ORDER BY title ASC LIMIT ? OFFSET ?`
+  ).all(...params, limit, offset);
+
   const savedIds = (await req.db.prepare(
     'SELECT book_id FROM saved_books WHERE user_id = ?'
   ).all(req.user.id)).map(r => r.book_id);
 
-  res.json(books.map(b => ({ ...b, is_saved: savedIds.includes(b.id) })));
+  const items = books.map(b => ({ ...b, is_saved: savedIds.includes(b.id) }));
+
+  if (req.query.legacy === '1') {
+    return res.json(items);
+  }
+
+  res.json({ books: items, total, page, limit, hasMore: offset + items.length < total });
 });
 
 // GET /api/books/:id — détail
