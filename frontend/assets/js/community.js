@@ -11,8 +11,9 @@ const CommunityPage = (() => {
   let activeTab = 'community';
   let posts     = [];
 
-  async function render(container) {
+  async function render(container, options = {}) {
     posts = await api.getPosts();
+    container._highlightPostId = options.highlightPostId || null;
     container.innerHTML = buildLayout();
     renderFeed(container);
     bindEvents(container);
@@ -390,6 +391,33 @@ const CommunityPage = (() => {
         updateCommentsUI();
       });
     });
+
+    feed.querySelectorAll('.post-action-btn[data-share-post-id]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = parseInt(btn.dataset.sharePostId, 10);
+        const post = posts.find(p => p.id === id);
+        if (!post) return;
+        try {
+          const result = await Share.sharePost(post);
+          Share.notifyShareResult(result);
+        } catch (err) {
+          alert('Impossible de partager : ' + err.message);
+        }
+      });
+    });
+
+    const highlightId = container._highlightPostId;
+    if (highlightId) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`post-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.boxShadow = '0 0 0 2px rgba(229, 57, 53, 0.75)';
+          setTimeout(() => { el.style.boxShadow = ''; }, 4000);
+        }
+      });
+    }
   }
 
   function renderPostCard(post) {
@@ -444,6 +472,15 @@ const CommunityPage = (() => {
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
             </svg>
             <span>${post.comments_count}</span>
+          </button>
+          <button class="post-action-btn" aria-label="Partager" data-share-post-id="${post.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            <span>Partager</span>
           </button>
         </div>
       </article>`;

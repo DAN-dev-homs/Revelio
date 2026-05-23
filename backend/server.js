@@ -51,6 +51,8 @@ async function start() {
   app.use('/api/notifications', require('./routes/notifications'));
   app.use('/api/about', require('./routes/about'));
 
+  app.use('/s', require('./routes/share'));
+
   app.get('*', (_req, res) => {
     res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
   });

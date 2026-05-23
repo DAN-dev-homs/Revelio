@@ -13,12 +13,70 @@ const App = (() => {
   let currentParams = {};
   let selectedImageUrl = null;
 
+  function savePendingDeepLinkFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const open = params.get('open');
+    const id = params.get('id');
+    if (open && id) {
+      sessionStorage.setItem('revelio_pending_open', JSON.stringify({ open, id }));
+    }
+  }
+
+  function resolveDeepLink() {
+    const pendingRaw = sessionStorage.getItem('revelio_pending_open');
+    if (pendingRaw) {
+      sessionStorage.removeItem('revelio_pending_open');
+      try {
+        const { open, id } = JSON.parse(pendingRaw);
+        if (open === 'enseignement') return { page: 'book-detail', params: { id } };
+        if (open === 'post') return { page: 'community', params: { highlightPostId: id } };
+      } catch (_) { /* ignore */ }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const open = params.get('open');
+    const id = params.get('id');
+    if (open === 'enseignement' && id) {
+      return { page: 'book-detail', params: { id } };
+    }
+    if (open === 'post' && id) {
+      return { page: 'community', params: { highlightPostId: id } };
+    }
+
+    const hash = window.location.hash.slice(1);
+    if (hash.startsWith('book-detail/')) {
+      return { page: 'book-detail', params: { id: hash.split('/')[1] } };
+    }
+    if (hash.startsWith('post/')) {
+      return { page: 'community', params: { highlightPostId: hash.split('/')[1] } };
+    }
+    if (hash.startsWith('profile/')) {
+      return { page: 'public-profile', params: { id: hash.split('/')[1] } };
+    }
+    if (hash && PAGES.includes(hash.split('?')[0])) {
+      return { page: hash.split('?')[0], params: {} };
+    }
+    return { page: 'home', params: {} };
+  }
+
+  function cleanDeepLinkUrl() {
+    if (window.location.search.includes('open=')) {
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+    }
+  }
+
+  async function navigateFromDeepLink() {
+    const target = resolveDeepLink();
+    cleanDeepLinkUrl();
+    await navigateTo(target.page, target.params);
+  }
+
   /** Initialise l'application */
   async function init() {
     await i18n.load();
 
-    // Vérifier authentification
     if (!api.getToken()) {
+      savePendingDeepLinkFromUrl();
       showLoginScreen();
       return;
     }
@@ -26,22 +84,14 @@ const App = (() => {
     buildShell();
     NotificationPanel.init();
     NotificationPanel.startAutoRefresh();
-    
-    // Gérer le hash initial
-    const hash = window.location.hash.slice(1);
-    if (hash) {
-      await navigateTo(hash);
-    } else {
-      await navigateTo('home');
-    }
+
+    await navigateFromDeepLink();
 
     // Écouter les changements de hash pour la navigation
     if (typeof window !== 'undefined') {
       window.addEventListener('hashchange', async () => {
-        const hash = window.location.hash.slice(1);
-        if (hash) {
-          await navigateTo(hash);
-        }
+        const target = resolveDeepLink();
+        await navigateTo(target.page, target.params);
       });
       
       window.addEventListener('langChanged', () => {
@@ -229,7 +279,7 @@ const App = (() => {
       switch (page) {
         case 'home':        await HomePage.render(el);      break;
         case 'explore':     await ExplorePage.render(el);   break;
-        case 'community':   await CommunityPage.render(el); break;
+        case 'community':   await CommunityPage.render(el, params); break;
         case 'profile':     await ProfilePage.render(el);   break;
         case 'book-detail': await BookDetailPage.render(el, params.id); break;
         case 'public-profile': await PublicProfilePage.render(el, params.id); break;
@@ -371,7 +421,7 @@ const App = (() => {
         buildShell();
         NotificationPanel.init();
         NotificationPanel.startAutoRefresh();
-        await navigateTo('home');
+        await navigateFromDeepLink();
       } catch (err) {
         errEl.textContent = err.message;
         btn.textContent = 'Se connecter'; btn.disabled = false;
@@ -402,7 +452,7 @@ const App = (() => {
         buildShell();
         NotificationPanel.init();
         NotificationPanel.startAutoRefresh();
-        await navigateTo('home');
+        await navigateFromDeepLink();
       } catch (err) {
         errEl.textContent = err.message;
         btn.textContent = 'Créer mon compte'; btn.disabled = false;

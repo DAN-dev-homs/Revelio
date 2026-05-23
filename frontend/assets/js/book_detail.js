@@ -245,11 +245,13 @@ const BookDetailPage = (() => {
     });
 
     // Partage
-    container.querySelector('#book-share-btn').addEventListener('click', () => {
-      // Simulation de copie de lien
-      navigator.clipboard.writeText(`Découvre cet enseignement chrétien : ${b.title} sur Revelio !`).then(() => {
-        alert('Lien copié dans le presse-papier !');
-      });
+    container.querySelector('#book-share-btn').addEventListener('click', async () => {
+      try {
+        const result = await Share.shareBook(b);
+        Share.notifyShareResult(result);
+      } catch (e) {
+        alert('Impossible de partager : ' + e.message);
+      }
     });
 
     // Lecteur Audio Global (remplace le lecteur local)
