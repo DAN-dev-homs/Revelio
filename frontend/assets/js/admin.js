@@ -992,25 +992,76 @@ async function deletePartner(id, name) {
 // ── MESSAGES DE CONTACT ────────────────────────────────────
 // ══════════════════════════════════════════════════════════
 
+let contactMessagesCache = [];
+let openContactMessageId = null;
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function loadContactMessages() {
   const tbody = document.getElementById('contact-table-body');
   try {
     const messages = await apiFetch('GET', '/admin/contact-messages');
+    contactMessagesCache = messages;
+
+    if (!messages.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">Aucun message</td></tr>';
+      return;
+    }
+
     tbody.innerHTML = messages.map(msg => `
       <tr style="${msg.is_read ? 'opacity:0.6;' : ''}">
-        <td>${new Date(msg.created_at).toLocaleDateString('fr-FR')}</td>
-        <td>${msg.name}</td>
-        <td>${msg.email}</td>
-        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${msg.message}</td>
-        <td>
-          ${!msg.is_read ? `<button class="btn btn-ghost btn-sm" onclick="markAsRead(${msg.id})">✓</button>` : ''}
-          <button class="btn btn-danger btn-sm" onclick="deleteContactMessage(${msg.id})">✕</button>
+        <td style="white-space:nowrap;vertical-align:top;">${new Date(msg.created_at).toLocaleString('fr-FR')}</td>
+        <td style="vertical-align:top;">${escapeHtml(msg.name)}</td>
+        <td style="vertical-align:top;"><a href="mailto:${encodeURIComponent(msg.email || '')}">${escapeHtml(msg.email)}</a></td>
+        <td class="contact-message-cell">
+          <div class="contact-message-preview">${escapeHtml(msg.message)}</div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="openContactMessageModal(${msg.id})">Voir en entier</button>
+        </td>
+        <td style="vertical-align:top;white-space:nowrap;">
+          ${!msg.is_read ? `<button class="btn btn-ghost btn-sm" onclick="markAsRead(${msg.id})" title="Marquer comme lu">✓</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteContactMessage(${msg.id})" title="Supprimer">✕</button>
         </td>
       </tr>
     `).join('');
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">Erreur: ${e.message}</td></tr>`;
   }
+}
+
+function openContactMessageModal(id) {
+  const msg = contactMessagesCache.find(m => m.id === id);
+  if (!msg) return;
+
+  openContactMessageId = id;
+  document.getElementById('contact-msg-name').textContent = msg.name || '—';
+  const emailEl = document.getElementById('contact-msg-email');
+  emailEl.textContent = msg.email || '—';
+  emailEl.href = msg.email ? `mailto:${msg.email}` : '#';
+  document.getElementById('contact-msg-date').textContent = new Date(msg.created_at).toLocaleString('fr-FR');
+  document.getElementById('contact-msg-body').textContent = msg.message || '';
+  document.getElementById('contact-msg-mark-read-btn').style.display = msg.is_read ? 'none' : '';
+  document.getElementById('modal-contact-message').classList.add('active');
+}
+
+async function markContactMessageFromModal() {
+  if (!openContactMessageId) return;
+  await markAsRead(openContactMessageId);
+  closeModal('modal-contact-message');
+}
+
+async function deleteContactMessageFromModal() {
+  if (!openContactMessageId) return;
+  await deleteContactMessage(openContactMessageId);
+  closeModal('modal-contact-message');
+  openContactMessageId = null;
 }
 
 async function markAsRead(id) {

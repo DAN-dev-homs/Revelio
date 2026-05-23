@@ -578,6 +578,25 @@
   </div>
 </div>
 
+<div class="overlay" id="modal-contact-message">
+  <div class="modal" style="max-width:640px;">
+    <h3 class="modal-title">Message de contact</h3>
+    <div class="modal-body">
+      <p style="margin:0 0 8px;"><strong id="contact-msg-name"></strong></p>
+      <p style="margin:0 0 16px;color:var(--muted);">
+        <a id="contact-msg-email" href="#"></a>
+        · <span id="contact-msg-date"></span>
+      </p>
+      <div id="contact-msg-body"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-contact-message')">Fermer</button>
+      <button class="btn btn-primary" id="contact-msg-mark-read-btn" onclick="markContactMessageFromModal()">Marquer comme lu</button>
+      <button class="btn btn-danger" id="contact-msg-delete-btn" onclick="deleteContactMessageFromModal()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
 <script src="/assets/js/api.js"></script>
 <script src="/assets/js/admin.js"></script>
 </body>
