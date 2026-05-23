@@ -10,7 +10,7 @@ const AudioManager = (() => {
   let currentSpeed = 1;
   const SPEEDS = [1, 1.25, 1.5, 2];
 
-  // Callback listeners pour mettre à jour la Fiche Livre (si elle est ouverte)
+  // Callback listeners pour mettre à jour la fiche cours (si elle est ouverte)
   let onTimeUpdateCb = null;
   let onPlayStateChangeCb = null;
 
@@ -61,7 +61,7 @@ const AudioManager = (() => {
       closePlayer();
     });
 
-    // Clic sur le Mini-Player entier -> ouvrir la page du livre
+    // Clic sur le Mini-Player entier -> ouvrir la page du cours
     miniPlayerEl.addEventListener('click', () => {
       if (currentBook) App.navigateTo('book-detail', { id: currentBook.id });
     });
@@ -70,7 +70,7 @@ const AudioManager = (() => {
   function playBook(book) {
     if (!book.audio_url) return;
 
-    // Si c'est déjà le même livre, on toggle juste Play/Pause
+    // Si c'est déjà le même cours, on toggle juste Play/Pause
     if (currentBook && currentBook.id === book.id) {
       togglePlay();
       return;
@@ -159,7 +159,7 @@ const AudioManager = (() => {
     miniPlayerEl.querySelector('.mp-progress-fill').style.width = `${pct}%`;
   }
 
-  // --- API Externe pour la Fiche Livre ---
+  // --- API externe pour la fiche cours ---
   
   function isBookPlaying(bookId) {
     return currentBook && currentBook.id === bookId && isPlaying;

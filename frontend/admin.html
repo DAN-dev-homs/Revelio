@@ -51,7 +51,7 @@
       </button>
       <button class="nav-link" onclick="showTab('books')" id="nav-books">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-        Livres
+        Cours
       </button>
       <button class="nav-link" onclick="showTab('users')" id="nav-users">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -112,21 +112,21 @@
         </div>
       </div>
 
-      <!-- Livres populaires -->
+      <!-- Cours populaires -->
       <div style="margin-top: 32px;">
-        <h3 style="margin-bottom: 16px;">📚 Livres populaires</h3>
+        <h3 style="margin-bottom: 16px;">📚 Cours populaires</h3>
         <div class="flex gap-md" style="flex-wrap: wrap;">
-          <!-- Livres les plus lus -->
+          <!-- Cours les plus suivis -->
           <div class="card" style="flex: 1; min-width: 300px;">
-            <h4 style="margin-bottom: 12px;">👀 Les plus lus</h4>
+            <h4 style="margin-bottom: 12px;">👀 Les plus suivis</h4>
             <div id="most-read-books"><div class="spinner"></div></div>
           </div>
-          <!-- Livres les plus sauvegardés -->
+          <!-- Cours les plus sauvegardés -->
           <div class="card" style="flex: 1; min-width: 300px;">
             <h4 style="margin-bottom: 12px;">❤️ Les plus sauvegardés</h4>
             <div id="most-saved-books"><div class="spinner"></div></div>
           </div>
-          <!-- Livres les plus likés -->
+          <!-- Cours les plus likés -->
           <div class="card" style="flex: 1; min-width: 300px;">
             <h4 style="margin-bottom: 12px;">👍 Les plus likés</h4>
             <div id="most-liked-books"><div class="spinner"></div></div>
@@ -135,16 +135,16 @@
       </div>
     </div>
 
-    <!-- ── LIVRES ─────────────────────────────────────── -->
+    <!-- ── COURS ─────────────────────────────────────── -->
     <div id="tab-books" class="tab-content">
       <div class="page-header">
-        <h2 class="page-title">📚 Livres</h2>
-        <button class="btn btn-primary" onclick="openBookModal()">+ Ajouter un livre</button>
+        <h2 class="page-title">📚 Cours</h2>
+        <button class="btn btn-primary" onclick="openBookModal()">+ Ajouter un cours</button>
       </div>
       <div class="card">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Titre</th><th>Auteur</th><th>Catégorie</th><th>Médias</th><th>Ajouté le</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Titre</th><th>Enseignant</th><th>Catégorie</th><th>Ressources</th><th>Ajouté le</th><th>Actions</th></tr></thead>
             <tbody id="books-table-body"><tr><td colspan="6"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
@@ -313,12 +313,12 @@
 <div class="overlay" id="modal-book">
   <div class="modal" style="max-width:600px;">
     <div class="modal-body">
-      <h3 class="modal-title" id="book-modal-title">Ajouter un livre</h3>
+      <h3 class="modal-title" id="book-modal-title">Ajouter un cours</h3>
       <div id="book-form-alert"></div>
       <input type="hidden" id="b-id">
       <div class="form-row">
-        <div class="form-group"><label>Titre *</label><input type="text" id="b-title" class="form-input" placeholder="Titre du livre"></div>
-        <div class="form-group"><label>Auteur *</label><input type="text" id="b-author" class="form-input" placeholder="Auteur"></div>
+        <div class="form-group"><label>Titre du cours *</label><input type="text" id="b-title" class="form-input" placeholder="Titre du cours"></div>
+        <div class="form-group"><label>Enseignant *</label><input type="text" id="b-author" class="form-input" placeholder="Pasteur, enseignant ou ministère"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Catégorie *</label>
@@ -344,10 +344,10 @@
         <div class="form-group"><label>🎥 Vidéo MP4</label><input type="file" id="b-video" class="form-input" accept="video/mp4"></div>
       </div>
       <div class="form-group"><label>🎧 Audio MP3</label><input type="file" id="b-audio" class="form-input" accept="audio/*"></div>
-      <div class="form-group"><label>Résumé (Markdown)</label><textarea id="b-summary" class="form-input" rows="4" placeholder="Résumé détaillé du livre..."></textarea></div>
+      <div class="form-group"><label>Enseignement (Markdown)</label><textarea id="b-summary" class="form-input" rows="4" placeholder="Contenu détaillé de l'enseignement..."></textarea></div>
       <div class="form-group"><label>Points Clés (un par ligne)</label><textarea id="b-keypoints" class="form-input" rows="3" placeholder="Idée 1&#10;Idée 2"></textarea></div>
       <div class="form-group"><label>Tags (virgule séparés)</label><input type="text" id="b-tags" class="form-input" placeholder="foi,purpose,identité"></div>
-      <div class="form-group"><label>Lien Amazon</label><input type="url" id="b-amazon" class="form-input" placeholder="https://amazon.fr/..."></div>
+      <div class="form-group"><label>Lien ressource</label><input type="url" id="b-amazon" class="form-input" placeholder="https://..."></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-book')">Annuler</button>

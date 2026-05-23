@@ -89,7 +89,7 @@ const HomePage = (() => {
         `).join('')}
       </div>
 
-      <!-- Continue Reading -->
+      <!-- Continue Course -->
       ${reading && reading.length > 0 ? `
         <h2 class="section-title" data-i18n="home.continue_reading">${i18n.t('home.continue_reading')}</h2>
         <div class="flex flex-col gap-md stagger-children" style="margin-bottom:var(--spacing-2xl)">

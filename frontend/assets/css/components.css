@@ -329,7 +329,7 @@
 .add-btn svg { width: 20px; height: 20px; color: white; }
 .add-post-placeholder { color: var(--text-muted); font-size: var(--font-md); }
 
-/* ── Continue Reading Progress ──────────────────────────── */
+/* ── Continue Course Progress ───────────────────────────── */
 .continue-book-card {
   background: var(--bg-surface);
   border-radius: var(--border-radius-md);

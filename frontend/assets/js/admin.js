@@ -125,7 +125,7 @@ async function loadMonitoring() {
         </div>
         <div class="stat-card">
           <div class="icon">📚</div>
-          <div class="label">Total livres</div>
+          <div class="label">Total cours</div>
           <div class="value">${d.books.total}</div>
           <div class="sub">🎥 ${d.books.withVideo} vidéos · 🎧 ${d.books.withAudio} audios</div>
         </div>
@@ -137,7 +137,7 @@ async function loadMonitoring() {
         </div>
         <div class="stat-card">
           <div class="icon">❤️</div>
-          <div class="label">Livres sauvegardés</div>
+          <div class="label">Cours sauvegardés</div>
           <div class="value">${d.engagement.savedBooks}</div>
           <div class="sub">Total dans toutes les bibliothèques</div>
         </div>
@@ -191,7 +191,7 @@ async function loadMonitoring() {
     renderTopReaders(d.topReaders.week, 'top-readers-week');
     renderTopReaders(d.topReaders.month, 'top-readers-month');
 
-    // Afficher les livres populaires
+    // Afficher les cours populaires
     renderTopBooks(d.topBooks.mostRead, 'most-read-books', 'readers_count');
     renderTopBooks(d.topBooks.mostSaved, 'most-saved-books', 'saves_count');
     renderTopBooks(d.topBooks.mostLiked, 'most-liked-books', 'total_likes');
@@ -224,7 +224,7 @@ function renderTopReaders(readers, containerId) {
         </div>
         <div style="flex:1;">
           <div style="font-size:14px;font-weight:500;">${reader.name}</div>
-          <div style="font-size:12px;color:var(--muted);">${reader.books_read} livres · ${Math.round(reader.total_progress || 0)}% progression</div>
+          <div style="font-size:12px;color:var(--muted);">${reader.books_read} cours · ${Math.round(reader.total_progress || 0)}% progression</div>
         </div>
         ${badgeIcon ? `<span style="font-size:16px;">${badgeIcon}</span>` : ''}
       </div>
@@ -297,7 +297,7 @@ async function loadBooks() {
   try {
     const books = await apiFetch('GET', '/admin/books');
     tbody.innerHTML = books.length === 0
-      ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">Aucun livre</td></tr>'
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">Aucun cours</td></tr>'
       : books.map(b => `
         <tr>
           <td><strong>${b.title}</strong></td>
@@ -322,7 +322,7 @@ async function loadBooks() {
 
 function openBookModal() {
   document.getElementById('b-id').value = '';
-  document.getElementById('book-modal-title').textContent = 'Ajouter un livre';
+  document.getElementById('book-modal-title').textContent = 'Ajouter un cours';
   document.getElementById('save-book-btn').textContent = 'Enregistrer';
   
   // Clear inputs
@@ -339,7 +339,7 @@ async function openEditBookModal(id) {
     const b = await apiFetch('GET', `/admin/books/${id}`);
     
     document.getElementById('b-id').value = b.id;
-    document.getElementById('book-modal-title').textContent = 'Modifier le livre';
+    document.getElementById('book-modal-title').textContent = 'Modifier le cours';
     document.getElementById('save-book-btn').textContent = 'Mettre à jour';
     
     document.getElementById('b-title').value = b.title;
@@ -360,7 +360,7 @@ async function openEditBookModal(id) {
     document.getElementById('book-form-alert').innerHTML = '';
     document.getElementById('modal-book').classList.add('active');
   } catch (e) {
-    alert("Impossible de charger les détails du livre : " + e.message);
+    alert("Impossible de charger les détails du cours : " + e.message);
   }
 }
 

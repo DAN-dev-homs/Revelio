@@ -205,7 +205,7 @@ const CommunityPage = (() => {
               ${badgeIcon ? `<span style="font-size: 16px;" title="${user.badge} badge">${badgeIcon}</span>` : ''}
             </div>
             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-              📚 ${user.books_completed || 0} livres • ⏱️ ${Math.round(user.total_hours || 0)}h
+              📚 ${user.books_completed || 0} cours • ⏱️ ${Math.round(user.total_hours || 0)}h
             </div>
             <div style="font-size: 11px; color: var(--text-muted);">
               Membre depuis ${new Date(user.created_at).toLocaleDateString('fr-FR')}

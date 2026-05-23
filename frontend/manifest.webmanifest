@@ -1,7 +1,7 @@
 {
   "name": "Revelio",
   "short_name": "Revelio",
-  "description": "Application de croissance spirituelle et de lecture.",
+  "description": "Plateforme de croissance spirituelle par des cours chrétiens.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

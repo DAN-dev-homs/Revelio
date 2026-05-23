@@ -1,5 +1,5 @@
 // ============================================================
-// REVELIO — Explore Library Screen (explore.js)
+// REVELIO — Courses Explore Screen (explore.js)
 // ============================================================
 
 const ExplorePage = (() => {
@@ -105,7 +105,7 @@ const ExplorePage = (() => {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
         </svg>
-        <p>Aucun livre trouvé</p>
+        <p>Aucun cours trouvé</p>
       </div>`;
       return;
     }
@@ -196,7 +196,7 @@ const ExplorePage = (() => {
       debounce = setTimeout(() => { filters.q = e.target.value; renderBooks(container); }, 300);
     });
 
-    // Recherche auteur
+    // Recherche enseignant
     container.querySelector('#search-author').addEventListener('input', (e) => {
       clearTimeout(debounce);
       debounce = setTimeout(() => { filters.author = e.target.value; renderBooks(container); }, 300);

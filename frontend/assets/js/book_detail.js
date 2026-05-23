@@ -30,7 +30,7 @@ const BookDetailPage = (() => {
       container.innerHTML = buildLayout(displayBook);
       bindEvents(container, currentBook);
     } catch (err) {
-      container.innerHTML = `<div class="empty-state"><p>Impossible de charger ce livre.</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p>Impossible de charger ce cours.</p></div>`;
     }
   }
 
@@ -38,9 +38,9 @@ const BookDetailPage = (() => {
     const coverUrl = b.cover_url || '';
     const coverStyle = coverUrl ? `background-image: url('${coverUrl}'); background-size: cover;` : `background: ${b.cover_color};`;
 
-    // Parsing simple du Markdown pour le résumé - style lisible
+    // Parsing simple du Markdown pour l'enseignement - style lisible
     const parseSummary = (text) => {
-      if (!text) return '<p style="color: #7a756f; font-style: italic;">Aucun résumé disponible.</p>';
+      if (!text) return '<p style="color: #7a756f; font-style: italic;">Aucun enseignement disponible.</p>';
       let html = text.replace(/^### (.*$)/gim, '<h3 style="font-family: Georgia, serif; font-size: 22px; font-weight: 600; color: #5a544d; margin: 24px 0 14px 0; padding-bottom: 8px; border-bottom: 1px solid #e0dcd4;">$1</h3>')
                      .replace(/^## (.*$)/gim, '<h2 style="font-family: Georgia, serif; font-size: 26px; font-weight: 600; color: #4a453d; margin: 28px 0 16px 0; padding-bottom: 10px; border-bottom: 2px solid #d0ccc4;">$1</h2>')
                      .replace(/^# (.*$)/gim, '<h1 style="font-family: Georgia, serif; font-size: 30px; font-weight: 700; color: #3a352f; margin: 32px 0 20px 0; text-align: center;">$1</h1>')
@@ -68,7 +68,7 @@ const BookDetailPage = (() => {
       </header>
 
       <div style="padding-bottom: 80px;">
-        <!-- 1. HEADER (Fiche Livre) -->
+        <!-- 1. HEADER (Fiche cours) -->
         <div style="display:flex; gap:16px; margin-bottom: 24px;">
           <div style="width: 100px; height: 140px; border-radius: 8px; ${coverStyle}"></div>
           <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
@@ -78,7 +78,7 @@ const BookDetailPage = (() => {
             
             <!-- Quick Actions -->
             <div style="display: flex; gap: 8px;">
-              <button class="btn-primary" style="flex:1; padding: 8px; font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-summary').offsetTop - 60)">📖 Lire</button>
+              <button class="btn-primary" style="flex:1; padding: 8px; font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-summary').offsetTop - 60)">📖 Étudier</button>
               ${b.audio_url ? `<button class="btn-primary" style="flex:1; padding: 8px; background:var(--bg-surface-2); color:var(--text); font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-audio').offsetTop - 60)">🎧 Écouter</button>` : ''}
             </div>
           </div>
@@ -94,7 +94,7 @@ const BookDetailPage = (() => {
         <!-- 2. VIDÉO (Format Prioritaire) -->
         ${b.video_url ? `
           <div style="margin-bottom: 32px;" id="section-video">
-            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Visionnage Rapide</h3>
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Vidéo du cours</h3>
             <video id="book-video" controls poster="${b.thumbnail_url || ''}" style="width: 100%; border-radius: 12px; background: #000; aspect-ratio: 16/9; object-fit: cover;">
               <source src="${b.video_url}" type="video/mp4">
               Votre navigateur ne supporte pas la vidéo.
@@ -105,7 +105,7 @@ const BookDetailPage = (() => {
         <!-- 4. AUDIO (Accessibilité) -->
         ${b.audio_url ? `
           <div style="margin-bottom: 32px; background: var(--bg-surface); padding: 16px; border-radius: 12px;" id="section-audio">
-            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Écouter le résumé</h3>
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Écouter l'enseignement</h3>
             <div style="display: flex; align-items: center; gap: 12px;">
               <button id="audio-play-btn" style="background: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg>
@@ -123,15 +123,15 @@ const BookDetailPage = (() => {
           <div style="margin-bottom: 32px; background: var(--bg-surface-2); padding: 20px; border-radius: 12px;">
             <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-              Points Clés
+              Points clés de l'enseignement
             </h3>
             <ul style="padding-left: 20px; line-height: 1.6;">${keyPointsHtml}</ul>
           </div>
         ` : ''}
 
-        <!-- 3. RÉSUMÉ ÉCRIT -->
+        <!-- 3. ENSEIGNEMENT ÉCRIT -->
         <div style="margin-bottom: 32px;" id="section-summary">
-          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Résumé complet</h3>
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Enseignement complet</h3>
           <div style="
             background: linear-gradient(135deg, #fefefe 0%, #f8f6f1 100%);
             border-radius: 12px;
@@ -169,10 +169,10 @@ const BookDetailPage = (() => {
         ${b.amazon_url ? `
           <div style="margin-bottom: 32px; text-align: center; padding: 24px; border: 1px solid var(--border-color); border-radius: 12px;">
             <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-              Ce résumé est une introduction. Le livre complet offre une transformation plus profonde.
+              Cet enseignement est une introduction. Le cours complet vous accompagne vers une mise en pratique plus profonde.
             </p>
             <a href="${b.amazon_url}" target="_blank" class="btn-primary" style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none;">
-              Lire le livre complet
+              Accéder à la ressource complète
             </a>
           </div>
         ` : ''}
@@ -247,7 +247,7 @@ const BookDetailPage = (() => {
     // Partage
     container.querySelector('#book-share-btn').addEventListener('click', () => {
       // Simulation de copie de lien
-      navigator.clipboard.writeText(`Découvre ce résumé de ${b.title} sur Revelio !`).then(() => {
+      navigator.clipboard.writeText(`Découvre ce cours chrétien : ${b.title} sur Revelio !`).then(() => {
         alert('Lien copié dans le presse-papier !');
       });
     });
@@ -259,7 +259,7 @@ const BookDetailPage = (() => {
       const speedBtn = container.querySelector('#audio-speed-btn');
       const video = container.querySelector('video');
 
-      // Restaurer l'état visuel au chargement si ce livre est déjà en cours de lecture
+      // Restaurer l'état visuel au chargement si ce cours est déjà en cours
       const state = AudioManager.getPlaybackState(b.id);
       if (state.isActive) {
         if (state.isPlaying) {
@@ -276,7 +276,7 @@ const BookDetailPage = (() => {
         }
 
         if (!AudioManager.isBookPlaying(b.id) && !AudioManager.getPlaybackState(b.id).isActive) {
-           AudioManager.playBook(b); // Lancer ce livre pour la première fois
+           AudioManager.playBook(b); // Lancer ce cours pour la première fois
         } else {
            AudioManager.togglePlay(); // Play/Pause du lecteur en cours
         }
@@ -341,7 +341,7 @@ const BookDetailPage = (() => {
       let timeRemaining = 60; // 1 minute en secondes
       let isActive = false;
       
-      // Clé pour sauvegarder l'état du timer pour ce livre
+      // Clé pour sauvegarder l'état du timer pour ce cours
       const timerStateKey = `timer_state_${b.id}`;
       
       // Récupérer l'état sauvegardé du timer
@@ -432,7 +432,7 @@ const BookDetailPage = (() => {
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       `;
       timerIndicator.innerHTML = `
-        <div style="margin-bottom: 4px;">⏱️ Temps de lecture</div>
+        <div style="margin-bottom: 4px;">⏱️ Temps d'étude</div>
         <div style="font-size: 18px;">1:00</div>
         <button id="start-timer-btn" style="
           margin-top: 8px;
@@ -444,7 +444,7 @@ const BookDetailPage = (() => {
           cursor: pointer;
           font-size: 12px;
           font-weight: 600;
-        ">Commencer la lecture</button>
+        ">Commencer le cours</button>
         <button id="debug-save-btn" style="
           margin-top: 4px;
           padding: 4px 8px;
@@ -476,7 +476,7 @@ const BookDetailPage = (() => {
           startBtn.style.color = 'white';
         } else if (timeRemaining === 60) {
           timeDisplay.textContent = formatTime(timeRemaining);
-          startBtn.textContent = 'Commencer la lecture';
+          startBtn.textContent = 'Commencer le cours';
           startBtn.style.background = 'white';
           startBtn.style.color = 'var(--primary)';
         } else {
@@ -522,9 +522,9 @@ const BookDetailPage = (() => {
               clearTimerState(); // Nettoyer l'état quand terminé
               if (timerIndicator) {
                 timerIndicator.innerHTML = `
-                  <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                  <div style="margin-bottom: 4px;">✅ Cours terminé</div>
                   <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                  <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Cours marqué comme terminé</div>
                 `;
               }
             }
@@ -545,7 +545,7 @@ const BookDetailPage = (() => {
       
       // Initialiser le timer avec l'état sauvegardé
       const initializeTimer = () => {
-        console.log('🔧 Initialisation du timer pour le livre:', b.id);
+        console.log('🔧 Initialisation du timer pour le cours:', b.id);
         const savedState = loadTimerState();
         
         if (savedState && savedState.bookId === b.id) {
@@ -569,9 +569,9 @@ const BookDetailPage = (() => {
               isActive = false;
               if (timerIndicator) {
                 timerIndicator.innerHTML = `
-                  <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                  <div style="margin-bottom: 4px;">✅ Cours terminé</div>
                   <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                  <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Cours marqué comme terminé</div>
                 `;
               }
             } else {
@@ -586,9 +586,9 @@ const BookDetailPage = (() => {
             isActive = false;
             if (timerIndicator) {
               timerIndicator.innerHTML = `
-                <div style="margin-bottom: 4px;">✅ Lecture terminée</div>
+                <div style="margin-bottom: 4px;">✅ Cours terminé</div>
                 <div style="font-size: 18px; color: #4CAF50;">100%</div>
-                <div style="font-size: 12px; margin-top: 4px;">Livre marqué comme lu</div>
+                <div style="font-size: 12px; margin-top: 4px;">Cours marqué comme terminé</div>
               `;
             }
           } else {
