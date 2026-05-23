@@ -221,10 +221,15 @@
 }
 .post-time { font-size: var(--font-xs); color: var(--text-muted); }
 .post-content { font-size: var(--font-sm); line-height: 1.65; color: var(--text-primary); margin-bottom: var(--spacing-lg); }
-.post-actions { display: flex; gap: var(--spacing-xl); }
+.post-actions {
+  display: flex; flex-wrap: wrap; gap: var(--spacing-md) var(--spacing-xl);
+  align-items: center;
+}
 .post-action-btn {
-  display: flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 6px;
   color: var(--text-secondary); font-size: var(--font-sm);
+  cursor: pointer; background: none; border: none;
+  padding: 4px 0; flex-shrink: 0;
   transition: color var(--transition-fast);
 }
 .post-action-btn:hover { color: var(--text-primary); }

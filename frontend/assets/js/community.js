@@ -398,11 +398,16 @@ const CommunityPage = (() => {
         const id = parseInt(btn.dataset.sharePostId, 10);
         const post = posts.find(p => p.id === id);
         if (!post) return;
+        if (typeof Share === 'undefined') {
+          alert('Module de partage non chargé. Rechargez la page.');
+          return;
+        }
         try {
-          const result = await Share.sharePost(post);
-          Share.notifyShareResult(result);
+          await Share.sharePost(post);
         } catch (err) {
-          alert('Impossible de partager : ' + err.message);
+          if (err.name !== 'AbortError') {
+            alert('Impossible de partager : ' + (err.message || 'erreur inconnue'));
+          }
         }
       });
     });

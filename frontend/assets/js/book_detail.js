@@ -77,9 +77,10 @@ const BookDetailPage = (() => {
             <div style="color: var(--text-secondary); margin-bottom: 16px;">${b.author}</div>
             
             <!-- Quick Actions -->
-            <div style="display: flex; gap: 8px;">
-              <button class="btn-primary" style="flex:1; padding: 8px; font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-summary').offsetTop - 60)">📖 Étudier</button>
-              ${b.audio_url ? `<button class="btn-primary" style="flex:1; padding: 8px; background:var(--bg-surface-2); color:var(--text); font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-audio').offsetTop - 60)">🎧 Écouter</button>` : ''}
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-primary" style="flex:1; min-width: 90px; padding: 8px; font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-summary').offsetTop - 60)">📖 Étudier</button>
+              ${b.audio_url ? `<button class="btn-primary" style="flex:1; min-width: 90px; padding: 8px; background:var(--bg-surface-2); color:var(--text-primary); font-size: 14px;" onclick="window.scrollTo(0, document.getElementById('section-audio').offsetTop - 60)">🎧 Écouter</button>` : ''}
+              <button type="button" class="js-share-book-btn btn-primary" style="flex:1; min-width: 90px; padding: 8px; background:transparent; color:var(--text-primary); border:1px solid var(--border-color); font-size: 14px;">↗ Partager</button>
             </div>
           </div>
         </div>
@@ -186,7 +187,7 @@ const BookDetailPage = (() => {
             <span style="font-weight: 600;">${b.likes_count || 0} Likes</span>
           </button>
           
-          <button id="book-share-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent; border: 1px solid var(--border-color); color: var(--text); border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <button type="button" class="js-share-book-btn" id="book-share-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; cursor: pointer; font-weight: 600;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
               <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
             </svg>
@@ -244,14 +245,22 @@ const BookDetailPage = (() => {
       }
     });
 
-    // Partage
-    container.querySelector('#book-share-btn').addEventListener('click', async () => {
-      try {
-        const result = await Share.shareBook(b);
-        Share.notifyShareResult(result);
-      } catch (e) {
-        alert('Impossible de partager : ' + e.message);
+    // Partage (en-tête + bas de page)
+    const runShare = async () => {
+      if (typeof Share === 'undefined') {
+        alert('Module de partage non chargé. Rechargez la page.');
+        return;
       }
+      try {
+        await Share.shareBook(b);
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          alert('Impossible de partager : ' + (e.message || 'erreur inconnue'));
+        }
+      }
+    };
+    container.querySelectorAll('.js-share-book-btn').forEach(btn => {
+      btn.addEventListener('click', runShare);
     });
 
     // Lecteur Audio Global (remplace le lecteur local)
