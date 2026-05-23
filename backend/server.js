@@ -50,9 +50,14 @@ async function start() {
     res.status(status).json({ error: message });
   });
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`🚀 Revelio API running at http://localhost:${PORT}`);
   });
+
+  // Uploads médias (multer + Cloudinary) : délais longs pour éviter coupure prématurée
+  server.timeout = 15 * 60 * 1000;
+  server.requestTimeout = 15 * 60 * 1000;
+  server.headersTimeout = 16 * 60 * 1000;
 }
 
 start().catch(err => {

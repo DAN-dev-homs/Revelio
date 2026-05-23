@@ -334,6 +334,33 @@ function openBookModal() {
   document.getElementById('book-form-alert').innerHTML = '';
 }
 
+async function uploadMediaDirectToCloudinary(file, folder, resourceType) {
+  const signRes = await fetch(
+    `${API}/admin/upload-signature?folder=${encodeURIComponent(folder)}`,
+    { headers: { Authorization: `Bearer ${adminToken}` } }
+  );
+  const sig = await signRes.json().catch(() => ({}));
+  if (!signRes.ok) throw new Error(sig.error || 'Impossible d\'obtenir la signature d\'upload');
+
+  const endpoint = resourceType === 'video'
+    ? `https://api.cloudinary.com/v1_1/${sig.cloud_name}/video/upload`
+    : `https://api.cloudinary.com/v1_1/${sig.cloud_name}/auto/upload`;
+
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('api_key', sig.api_key);
+  fd.append('timestamp', String(sig.timestamp));
+  fd.append('signature', sig.signature);
+  fd.append('folder', sig.folder);
+
+  const uploadRes = await fetch(endpoint, { method: 'POST', body: fd });
+  const data = await uploadRes.json().catch(() => ({}));
+  if (!uploadRes.ok) {
+    throw new Error(data.error?.message || data.error || 'Échec de l\'upload vers Cloudinary');
+  }
+  return data.secure_url;
+}
+
 async function openEditBookModal(id) {
   try {
     const b = await apiFetch('GET', `/admin/books/${id}`);
@@ -387,18 +414,31 @@ async function saveBook() {
   const coverFile = document.getElementById('b-cover').files[0];
   const videoFile = document.getElementById('b-video').files[0];
   const audioFile = document.getElementById('b-audio').files[0];
-  if (coverFile) formData.append('cover', coverFile);
-  if (videoFile) formData.append('video', videoFile);
-  if (audioFile) formData.append('audio', audioFile);
 
   try {
+    if (videoFile) {
+      btn.textContent = 'Upload vidéo...';
+      formData.append('video_url', await uploadMediaDirectToCloudinary(videoFile, 'revelio/books/videos', 'video'));
+    }
+    if (coverFile) {
+      btn.textContent = 'Upload couverture...';
+      formData.append('cover_url', await uploadMediaDirectToCloudinary(coverFile, 'revelio/books/covers', 'image'));
+    }
+    if (audioFile) {
+      btn.textContent = 'Upload audio...';
+      formData.append('audio_url', await uploadMediaDirectToCloudinary(audioFile, 'revelio/books/audio', 'auto'));
+    }
+
+    btn.textContent = 'Enregistrement...';
     const bookId = document.getElementById('b-id').value;
     const url = bookId ? `${API}/admin/books/${bookId}` : `${API}/admin/books`;
     const method = bookId ? 'PUT' : 'POST';
 
     const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${adminToken}` }, body: formData });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || (res.status === 502 ? 'Le serveur a expiré pendant l\'upload. Réessayez avec une vidéo plus légère.' : `Erreur ${res.status}`));
+    }
     closeModal('modal-book');
     loadBooks();
     loadMonitoring();

@@ -7,7 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const { uploadToCloudinary } = require('../config/cloudinary');
+const { cloudinary, uploadToCloudinary } = require('../config/cloudinary');
 
 // ── Helper : log d'activité ──────────────────────────────
 async function logActivity(db, userId, action, detail, ip) {
@@ -32,11 +32,11 @@ function cleanupUploadedFiles(files) {
   });
 }
 
-async function uploadBookFiles(files, existingBook = {}) {
+async function uploadBookFiles(files, existingBook = {}, bodyUrls = {}) {
   const urls = {
-    cover_url: existingBook.cover_url || null,
-    video_url: existingBook.video_url || null,
-    audio_url: existingBook.audio_url || null
+    cover_url: bodyUrls.cover_url || existingBook.cover_url || null,
+    video_url: bodyUrls.video_url || existingBook.video_url || null,
+    audio_url: bodyUrls.audio_url || existingBook.audio_url || null
   };
 
   if (files?.['cover']) {
@@ -225,6 +225,26 @@ router.get('/stats', async (req, res) => {
   });
 });
 
+// Signature pour upload direct navigateur → Cloudinary (évite timeout 502 sur grosses vidéos)
+router.get('/upload-signature', (req, res) => {
+  const folder = req.query.folder || 'revelio';
+  const timestamp = Math.round(Date.now() / 1000);
+  const paramsToSign = { timestamp, folder };
+
+  const signature = cloudinary.utils.api_sign_request(
+    paramsToSign,
+    process.env.CLOUDINARY_API_SECRET
+  );
+
+  res.json({
+    signature,
+    timestamp,
+    folder,
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY
+  });
+});
+
 // ═══════════════════════════════════════════════════════
 // ── GESTION DES LIVRES ──────────────────────────────────
 // ═══════════════════════════════════════════════════════
@@ -247,7 +267,11 @@ router.post('/books', cpUpload, handleUploadError, asyncHandler(async (req, res)
 
   let uploadedUrls;
   try {
-    uploadedUrls = await uploadBookFiles(req.files);
+    uploadedUrls = await uploadBookFiles(req.files, {}, {
+      cover_url: req.body.cover_url || null,
+      video_url: req.body.video_url || null,
+      audio_url: req.body.audio_url || null
+    });
   } finally {
     cleanupUploadedFiles(req.files);
   }
@@ -301,7 +325,11 @@ router.put('/books/:id', cpUpload, handleUploadError, asyncHandler(async (req, r
   
   let uploadedUrls;
   try {
-    uploadedUrls = await uploadBookFiles(req.files, existingBook);
+    uploadedUrls = await uploadBookFiles(req.files, existingBook, {
+      cover_url: req.body.cover_url || null,
+      video_url: req.body.video_url || null,
+      audio_url: req.body.audio_url || null
+    });
   } finally {
     cleanupUploadedFiles(req.files);
   }
